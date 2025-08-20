@@ -5,12 +5,9 @@ services:
     image: go-whatsapp-app:latest
     container_name: go-whatsapp-app
     restart: unless-stopped
-    working_dir: /app
-    user: "1000:1000"  # Run as non-root user with UID 1000
+    working_dir: /data
     volumes:
-      - ./data:/app
-      - ./session.db:/app/session.db  # Explicitly mount the database file
-      - /root/autoreply/data:/app/qr
+      - ./data:/data
     environment:
       - TZ=Asia/Jakarta
     # Ensure the container has enough memory

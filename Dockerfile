@@ -17,10 +17,21 @@ ENV CGO_ENABLED=0
 RUN go build -o /out/app .
 
 # Runtime image with CA certs
-FROM gcr.io/distroless/static:nonroot
-WORKDIR /app
-COPY --from=builder /out/app /usr/local/bin/app
+FROM alpine:3.19
 
-# Set a sane default working directory where the app will write session.db and qr_*.png
-# Bind-mount a host ./data directory to /app to persist these files.
-ENTRYPOINT ["/usr/local/bin/app"]
+# Create app user and directory with proper permissions
+RUN addgroup -S appgroup && \
+    adduser -S appuser -G appgroup && \
+    mkdir -p /data && \
+    chown -R appuser:appgroup /data
+
+WORKDIR /data
+
+# Copy binary
+COPY --from=builder /out/app /app
+
+# Switch to non-root user
+USER appuser
+
+# Run the application
+ENTRYPOINT ["/app"]

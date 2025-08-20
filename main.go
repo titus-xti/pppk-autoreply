@@ -37,8 +37,12 @@ func main() {
 	// Initialize logger
 	logger := waLog.Stdout("Database", "DEBUG", true)
 
-	// Use absolute path for SQLite database
-	dbPath := "session.db"
+	// Use data directory for database storage
+	dbPath := "/data/session.db"
+	// Create data directory if it doesn't exist
+	if err := os.MkdirAll("/data", 0755); err != nil {
+		panic(fmt.Errorf("failed to create data directory: %w", err))
+	}
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		panic(fmt.Errorf("failed to open database: %w", err))
