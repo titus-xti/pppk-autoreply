@@ -43,7 +43,9 @@ func main() {
 	if err := os.MkdirAll("/data", 0755); err != nil {
 		panic(fmt.Errorf("failed to create data directory: %w", err))
 	}
-	db, err := sql.Open("sqlite", dbPath)
+	// Enable foreign keys and WAL mode for better performance and reliability
+	dsn := fmt.Sprintf("file:%s?_foreign_keys=on&_journal_mode=WAL", dbPath)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		panic(fmt.Errorf("failed to open database: %w", err))
 	}
