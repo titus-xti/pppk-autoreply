@@ -5,9 +5,7 @@ services:
     image: go-whatsapp-app:latest
     container_name: go-whatsapp-app
     restart: unless-stopped
-    working_dir: /data
-    volumes:
-      - ./data:/data
+    working_dir: /app
     environment:
       - TZ=Asia/Jakarta
     # Ensure the container has enough memory

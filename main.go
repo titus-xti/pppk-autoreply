@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/lib/pq"
 	qrcode "github.com/mdp/qrterminal/v3"
 	"go.mau.fi/whatsmeow"
 	waProto "go.mau.fi/whatsmeow/proto/waE2E"
@@ -20,7 +21,6 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	waLog "go.mau.fi/whatsmeow/util/log"
-	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -37,26 +37,22 @@ func main() {
 	// Initialize logger
 	logger := waLog.Stdout("Database", "DEBUG", true)
 
-	// Use data directory for database storage
-	dbPath := "/data/session.db"
-	// Create data directory if it doesn't exist
-	if err := os.MkdirAll("/data", 0755); err != nil {
-		panic(fmt.Errorf("failed to create data directory: %w", err))
-	}
-	// Enable foreign keys and WAL mode for better performance and reliability
-	dsn := fmt.Sprintf("file:%s?_journal_mode=WAL", dbPath)
-	db, err := sql.Open("sqlite", dsn)
+	// PostgreSQL connection string
+	pgConnStr := "postgres://postgres:Gkjp2025@134.209.100.169:5432/autoreply?sslmode=disable"
+	
+	// Open PostgreSQL connection
+	db, err := sql.Open("postgres", pgConnStr)
 	if err != nil {
-		panic(fmt.Errorf("failed to open database: %w", err))
+		panic(fmt.Errorf("failed to connect to PostgreSQL: %w", err))
 	}
 
-	// Enable foreign keys with a separate PRAGMA statement
-	if _, err := db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
-		panic(fmt.Errorf("failed to enable foreign keys: %w", err))
+	// Test the connection
+	if err := db.Ping(); err != nil {
+		panic(fmt.Errorf("failed to ping PostgreSQL: %w", err))
 	}
 
-	// Initialize the SQLite database with the required schema
-	sqlStore := sqlstore.NewWithDB(db, "sqlite3", logger)
+	// Initialize the PostgreSQL database with the required schema
+	sqlStore := sqlstore.NewWithDB(db, "postgres", logger)
 	
 	// Ensure the database tables are created
 	err = sqlStore.Upgrade(ctx)
