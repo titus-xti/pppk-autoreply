@@ -5,6 +5,7 @@ go 1.24.0
 toolchain go1.24.6
 
 require (
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	go.mau.fi/whatsmeow v0.0.0-20250816112049-1b82e4b52df1
 	modernc.org/sqlite v1.38.2
 )
@@ -20,7 +21,6 @@ require (
 	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
-	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	go.mau.fi/libsignal v0.2.0 // indirect
 	go.mau.fi/util v0.9.0 // indirect
 	golang.org/x/crypto v0.41.0 // indirect

@@ -23,18 +23,7 @@ import (
 
 func main() {
 
-	msg := `
-Syalooom
-
-Berikut ini adalah informasi surat suara digital Bp/Ibu/Sdr untuk pemilahan pendeta kedua GKJ Pamulang. 
-
-https://pemilihan.gkj-pamulang.org/H5r2N
-
-Surat suara bisa diakses pada hari minggu 28 September 2025, mulai pukul 06:00 - 12:00 WIB
-Selamat Memilih, Tuhan Yesus Memberkati
-
-Panitia Pemilihan Pendeta Kedua GKJ Pamulang
-	`
+	msg := `autoreplyon`
 
 	ctx := context.Background()
 	// Set latest WhatsApp Web version to avoid version mismatch issues
@@ -93,8 +82,9 @@ func makeEventHandler(ctx context.Context, client *whatsmeow.Client, initialJID 
 
 // handleQR saves displayed QR codes as PNG files
 func handleQR(v *events.QR) {
+	os.Mkdir("qr", 0755)
 	for i, code := range v.Codes {
-		filename := fmt.Sprintf("qr_%d.png", i)
+		filename := fmt.Sprintf("qr/qr_%d.png", i)
 		if err := qrcode.WriteFile(code, qrcode.Medium, 512, filename); err != nil {
 			fmt.Println("failed to write QR PNG:", err)
 		} else {

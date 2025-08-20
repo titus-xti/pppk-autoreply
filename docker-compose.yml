@@ -7,11 +7,6 @@ services:
     restart: unless-stopped
     working_dir: /app
     volumes:
-      - ./data:/app
+      - /root/autoreply/data:/app
     environment:
       - TZ=Asia/Jakarta
-    # Optional: pass a target recipient via env and read it in code (not implemented yet)
-    #   - TARGET_JID=6281297898399@s.whatsapp.net
-    # Expose nothing (it's a client). If you later add an HTTP server, map ports here.
-    # ports:
-    #   - "8080:8080"
