@@ -44,10 +44,15 @@ func main() {
 		panic(fmt.Errorf("failed to create data directory: %w", err))
 	}
 	// Enable foreign keys and WAL mode for better performance and reliability
-	dsn := fmt.Sprintf("file:%s?_foreign_keys=on&_journal_mode=WAL", dbPath)
+	dsn := fmt.Sprintf("file:%s?_journal_mode=WAL", dbPath)
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		panic(fmt.Errorf("failed to open database: %w", err))
+	}
+
+	// Enable foreign keys with a separate PRAGMA statement
+	if _, err := db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
+		panic(fmt.Errorf("failed to enable foreign keys: %w", err))
 	}
 
 	// Initialize the SQLite database with the required schema
