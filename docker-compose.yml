@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  app:
+    build: .
+    image: go-whatsapp-app:latest
+    container_name: go-whatsapp-app
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./data:/app
+    environment:
+      - TZ=Asia/Jakarta
+    # Optional: pass a target recipient via env and read it in code (not implemented yet)
+    #   - TARGET_JID=6281297898399@s.whatsapp.net
+    # Expose nothing (it's a client). If you later add an HTTP server, map ports here.
+    # ports:
+    #   - "8080:8080"
