@@ -39,7 +39,7 @@ func main() {
 
 	// PostgreSQL connection string
 	pgConnStr := "postgres://postgres:Gkjp2025@134.209.100.169:5432/autoreply?sslmode=disable"
-	
+
 	// Open PostgreSQL connection
 	db, err := sql.Open("postgres", pgConnStr)
 	if err != nil {
@@ -53,7 +53,7 @@ func main() {
 
 	// Initialize the PostgreSQL database with the required schema
 	sqlStore := sqlstore.NewWithDB(db, "postgres", logger)
-	
+
 	// Ensure the database tables are created
 	err = sqlStore.Upgrade(ctx)
 	if err != nil {
@@ -97,7 +97,6 @@ func main() {
 				qrcode.GenerateHalfBlock(evt.Code, qrcode.L, os.Stdout)
 			case "success":
 				fmt.Println("\n✅ Successfully paired with WhatsApp!")
-				return
 			case "timeout":
 				fmt.Println("\n❌ QR code expired. Please restart the application to generate a new one.")
 				return
