@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	_ "modernc.org/sqlite"
 	qrcode "github.com/mdp/qrterminal/v3"
 	"go.mau.fi/whatsmeow"
 	waProto "go.mau.fi/whatsmeow/proto/waE2E"
@@ -21,6 +20,7 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	waLog "go.mau.fi/whatsmeow/util/log"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -76,16 +76,26 @@ func main() {
 		}
 
 		for evt := range qrChan {
-			if evt.Event == "code" {
-				fmt.Println("Scan the QR code with your phone (WhatsApp → Linked Devices → Link a Device):")
+			switch evt.Event {
+			case "code":
+				fmt.Println("\n🔍 Scan the QR code with your phone (WhatsApp → Linked Devices → Link a Device):")
 				qrcode.GenerateHalfBlock(evt.Code, qrcode.L, os.Stdout)
-			} else {
-				fmt.Println("Login event:", evt.Event)
-				if evt.Event == "success" {
-					break
-				} else if evt.Event == "timeout" {
-					fmt.Println("QR code expired, please restart the application")
-					return
+			case "success":
+				fmt.Println("\n✅ Successfully paired with WhatsApp!")
+				return
+			case "timeout":
+				fmt.Println("\n❌ QR code expired. Please restart the application to generate a new one.")
+				return
+			case "error":
+				fmt.Printf("\n❌ Login error: %v\n", evt.Error)
+				if evt.Error != nil {
+					fmt.Printf("Error details: %+v\n", evt.Error)
+				}
+				return
+			default:
+				fmt.Printf("\nℹ️  Login event: %s\n", evt.Event)
+				if evt.Error != nil {
+					fmt.Printf("Error details: %+v\n", evt.Error)
 				}
 			}
 		}
