@@ -33,7 +33,9 @@ func main() {
 		fmt.Println("warn: failed to get latest WA version:", err)
 	}
 
-	db, err := sqlstore.New(ctx, "sqlite", "file:session.db?_pragma=foreign_keys(ON)", nil)
+	// Use absolute path for SQLite database
+	dbPath := "/app/session.db"
+	db, err := sqlstore.New(ctx, "sqlite", "file:"+dbPath+"?_pragma=foreign_keys(ON)&_journal_mode=WAL", nil)
 	if err != nil {
 		panic(err)
 	}
