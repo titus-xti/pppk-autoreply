@@ -50,6 +50,14 @@ func main() {
 
 	// Initialize the SQLite database with the required schema
 	sqlStore := sqlstore.NewWithDB(db, "sqlite3", logger)
+	
+	// Ensure the database tables are created
+	err = sqlStore.Upgrade(ctx)
+	if err != nil {
+		panic(fmt.Errorf("failed to upgrade database: %w", err))
+	}
+
+	// Get or create device
 	deviceStore, err := sqlStore.GetFirstDevice(ctx)
 	if err != nil {
 		panic(fmt.Errorf("failed to get device: %w", err))
