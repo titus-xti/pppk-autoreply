@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,18 +12,18 @@ import (
 	"syscall"
 	"time"
 
-	qrcode "github.com/skip2/go-qrcode"
+	_ "modernc.org/sqlite"
+	qrcode "github.com/mdp/qrterminal/v3"
 	"go.mau.fi/whatsmeow"
 	waProto "go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
-	_ "modernc.org/sqlite"
+	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
 func main() {
-
 	msg := `autoreplyon`
 
 	ctx := context.Background()
@@ -33,29 +34,68 @@ func main() {
 		fmt.Println("warn: failed to get latest WA version:", err)
 	}
 
+	// Initialize logger
+	logger := waLog.Stdout("Database", "DEBUG", true)
+
 	// Use absolute path for SQLite database
-	dbPath := "/app/session.db"
-	db, err := sqlstore.New(ctx, "sqlite", "file:"+dbPath+"?_pragma=foreign_keys(ON)&_journal_mode=WAL", nil)
+	dbPath := "session.db"
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to open database: %w", err))
 	}
-	deviceStore, err := db.GetFirstDevice(ctx)
+
+	// Initialize the SQLite database with the required schema
+	sqlStore := sqlstore.NewWithDB(db, "sqlite3", logger)
+	deviceStore, err := sqlStore.GetFirstDevice(ctx)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to get device: %w", err))
 	}
 	if deviceStore == nil {
-		deviceStore = db.NewDevice()
+		deviceStore = sqlStore.NewDevice()
 	}
 	client := whatsmeow.NewClient(deviceStore, nil)
+
+	// Create a background context if not already set
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// If first login (no session yet), request pairing code
+	if client.Store.ID == nil {
+		fmt.Println("🔑 No session found, pairing required...")
+
+		// Get the QR code channel before connecting
+		qrChan, err := client.GetQRChannel(context.Background())
+		if err != nil {
+			panic(fmt.Errorf("failed to get QR channel: %w", err))
+		}
+
+		// Connect to WhatsApp
+		if err := client.Connect(); err != nil {
+			panic(fmt.Errorf("failed to connect: %w", err))
+		}
+
+		for evt := range qrChan {
+			if evt.Event == "code" {
+				fmt.Println("Scan the QR code with your phone (WhatsApp → Linked Devices → Link a Device):")
+				qrcode.GenerateHalfBlock(evt.Code, qrcode.L, os.Stdout)
+			} else {
+				fmt.Println("Login event:", evt.Event)
+				if evt.Event == "success" {
+					break
+				} else if evt.Event == "timeout" {
+					fmt.Println("QR code expired, please restart the application")
+					return
+				}
+			}
+		}
+	}
 
 	// Target JID for message
 	jid, _ := types.ParseJID("6281297898399@s.whatsapp.net")
 
+	// Add event handler after successful connection
 	client.AddEventHandler(makeEventHandler(ctx, client, jid, msg))
-
-	if err := client.Connect(); err != nil {
-		panic(err)
-	}
 
 	// wait so app doesn't exit immediately
 	ch := make(chan os.Signal, 1)
@@ -70,27 +110,12 @@ func makeEventHandler(ctx context.Context, client *whatsmeow.Client, initialJID 
 	var once sync.Once
 	return func(evt interface{}) {
 		switch v := evt.(type) {
-		case *events.QR:
-			handleQR(v)
 		case *events.Message:
 			handleIncomingMessage(ctx, client, v)
 		case *events.Connected:
 			once.Do(func() {
 				go handleConnected(ctx, client, initialJID, initialMsg)
 			})
-		}
-	}
-}
-
-// handleQR saves displayed QR codes as PNG files
-func handleQR(v *events.QR) {
-	os.Mkdir("qr", 0755)
-	for i, code := range v.Codes {
-		filename := fmt.Sprintf("qr/qr_%d.png", i)
-		if err := qrcode.WriteFile(code, qrcode.Medium, 512, filename); err != nil {
-			fmt.Println("failed to write QR PNG:", err)
-		} else {
-			fmt.Println("Saved QR to", filename)
 		}
 	}
 }
@@ -135,15 +160,12 @@ func messageText(m *waProto.Message) string {
 	if m == nil {
 		return ""
 	}
-	// Prefer extended text if present
 	if etm := m.GetExtendedTextMessage(); etm != nil && etm.Text != nil {
 		return etm.GetText()
 	}
-	// Plain conversation
 	if c := m.GetConversation(); c != "" {
 		return c
 	}
-	// Sometimes text can be inside ephemeral/container messages
 	if em := m.GetEphemeralMessage(); em != nil {
 		if inner := messageText(em.GetMessage()); inner != "" {
 			return inner
@@ -180,7 +202,6 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 
 // parseRegistration parses text like: DAFTAR-<name>-<wilayah>-<tgl_lahir>#
 func parseRegistration(s string) (name, wilayah, dob string, ok bool) {
-	// (?i) makes the DAFTAR keyword case-insensitive
 	re := regexp.MustCompile(`(?i)^DAFTAR-([^\-\r\n]+)-([^\-\r\n]+)-([0-9]{8})#$`)
 	m := re.FindStringSubmatch(strings.TrimSpace(s))
 	if len(m) != 4 {
@@ -189,15 +210,12 @@ func parseRegistration(s string) (name, wilayah, dob string, ok bool) {
 	n := strings.TrimSpace(m[1])
 	wRaw := strings.TrimSpace(m[2])
 	d := strings.TrimSpace(m[3])
-	// wilayah: case-insensitive validation; normalize to lowercase canonical
 	w := strings.ToLower(wRaw)
 	switch w {
 	case "pp1", "pp2", "serpong", "bukit", "reni":
-		// ok
 	default:
 		return "", "", "", false
 	}
-	// tgl_lahir: must be a valid date in DDMMYYYY
 	if _, err := time.Parse("02012006", d); err != nil {
 		return "", "", "", false
 	}
