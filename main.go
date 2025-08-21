@@ -246,7 +246,7 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 				_, err = db.Exec(`
                     INSERT INTO registration (name, wilayah, year_of_birth, phone_number, created_at)
                     VALUES ($1, $2, $3, $4, NOW())
-                `, name, wilayah, dob, v.Info.Sender.User)
+                `, strings.ToUpper(name), strings.ToUpper(wilayah), dob, v.Info.Sender.User)
 
 				if err != nil {
 					log.Printf("Error saving to database: %v", err)
@@ -262,7 +262,7 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 			}
 		}
 	} else {
-		reply = fmt.Sprintf("%s%sUntuk mendaftar pemilihan online, silahkan kirim pesan dengan format:\nDAFTAR-<nama lengkap jemaat>-<wilayah pelayanan>-<tahun lahir># \n\nTahun Lahir 4 Digit, Contoh: 1985\nWilayah pp1/pp2/serpong/bukit/reni\n\nContoh:\nDAFTAR-James Munthe-pp1-1972#\nDAFTAR-Maria Fatmitasari-pp2-1972#\nDAFTAR-Ery Setiawan-bukit-1972#\nDAFTAR-Florencia Irena-reni-1980#\nDAFTAR-Titus Adi Prasetyo-serpong-1985#", msg, "\n")
+		reply = fmt.Sprintf("%sUntuk mendaftar pemilihan online, silahkan kirim pesan dengan format:\nDAFTAR-<nama lengkap jemaat>-<wilayah pelayanan>-<tahun lahir># \n\nTahun Lahir 4 Digit, Contoh: 1985\nWilayah pp1/pp2/serpong/bukit/reni\n\nContoh:\nDAFTAR-James Munthe-pp1-1972#\nDAFTAR-Maria Fatmitasari-pp2-1972#\nDAFTAR-Ery Setiawan-bukit-1972#\nDAFTAR-Florencia Irena-reni-1980#\nDAFTAR-Titus Adi Prasetyo-serpong-1985#", msg)
 	}
 
 	if err := sendWithRetry(ctx, client, v.Info.Chat, reply, 1, 2*time.Second); err != nil {
@@ -272,10 +272,10 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 
 // parseRegistration parses text like: DAFTAR-<name>-<wilayah>-<year>#
 func parseRegistration(s string) (name, wilayah, dob, message string, ok bool) {
-	re := regexp.MustCompile(`(?i)^DAFTAR-([^\-\r\n]+)-([^\-\r\n]+)-(\d{4})#$`)
-	m := re.FindStringSubmatch(strings.TrimSpace(s))
+	re := regexp.MustCompile(`(?i)^DAFTAR\s*-\s*([^\-\r\n]+?)\s*-\s*([^\-\r\n]+?)\s*-\s*(\d{4})\s*#\s*$`)
+	m := re.FindStringSubmatch(s)
 	if len(m) != 4 {
-		return "", "", "", "Syaloom Bp/Ibu,", false
+		return "", "", "", "Syaloom Bp/Ibu,\n\n", false
 	}
 	n := strings.TrimSpace(m[1])
 	wRaw := strings.TrimSpace(m[2])
@@ -285,14 +285,14 @@ func parseRegistration(s string) (name, wilayah, dob, message string, ok bool) {
 	switch w {
 	case "pp1", "pp2", "serpong", "bukit", "reni":
 	default:
-		return "", "", "", "Wilayah pelayanan tidak valid. Silahkan isi pp1/pp2/serpong/bukit/reni", false
+		return "", "", "", "Wilayah pelayanan tidak valid. Silahkan isi pp1/pp2/serpong/bukit/reni\n\n", false
 	}
 
 	// Validate year is between 1900 and current year + 1
 	currentYear := time.Now().Year()
 	parsedYear, err := strconv.Atoi(year)
 	if err != nil || parsedYear < 1900 || parsedYear > currentYear+1 {
-		return "", "", "", "Tahun lahir tidak valid. Silahkan isi tahun lahir 4 digit", false
+		return "", "", "", "Tahun lahir tidak valid. Silahkan isi tahun lahir 4 digit\n\n", false
 	}
 
 	return n, w, year, "", true
