@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"regexp"
@@ -144,7 +145,7 @@ func makeEventHandler(ctx context.Context, client *whatsmeow.Client, initialJID 
 	}
 }
 
-// handleIncomingMessage logs and auto-replies "okay" to non-self messages
+// handleIncomingMessage logs, marks messages as read, and auto-replies "okay" to non-self messages
 func handleIncomingMessage(ctx context.Context, client *whatsmeow.Client, v *events.Message) {
 	from := v.Info.Sender.String()
 	chat := v.Info.Chat.String()
@@ -153,6 +154,13 @@ func handleIncomingMessage(ctx context.Context, client *whatsmeow.Client, v *eve
 		text = "<non-text message>"
 	}
 	fmt.Printf("Incoming from %s in %s: %s\n", from, chat, text)
+
+	// Mark message as read
+	err := client.MarkRead([]string{v.Info.ID}, time.Now(), v.Info.Chat, v.Info.Sender)
+	if err != nil {
+		log.Printf("Error marking message as read: %v", err)
+	}
+
 	autoReplyForIncoming(ctx, client, v)
 }
 
