@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -232,24 +233,30 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 	}
 }
 
-// parseRegistration parses text like: DAFTAR-<name>-<wilayah>-<tgl_lahir>#
+// parseRegistration parses text like: DAFTAR-<name>-<wilayah>-<year>#
 func parseRegistration(s string) (name, wilayah, dob string, ok bool) {
-	re := regexp.MustCompile(`(?i)^DAFTAR-([^\-\r\n]+)-([^\-\r\n]+)-([0-9]{8})#$`)
+	re := regexp.MustCompile(`(?i)^DAFTAR-([^\-\r\n]+)-([^\-\r\n]+)-(\d{4})#$`)
 	m := re.FindStringSubmatch(strings.TrimSpace(s))
 	if len(m) != 4 {
 		return "", "", "", false
 	}
 	n := strings.TrimSpace(m[1])
 	wRaw := strings.TrimSpace(m[2])
-	d := strings.TrimSpace(m[3])
+	year := strings.TrimSpace(m[3])
 	w := strings.ToLower(wRaw)
+
 	switch w {
 	case "pp1", "pp2", "serpong", "bukit", "reni":
 	default:
 		return "", "", "", false
 	}
-	if _, err := time.Parse("02012006", d); err != nil {
+
+	// Validate year is between 1900 and current year + 1
+	currentYear := time.Now().Year()
+	parsedYear, err := strconv.Atoi(year)
+	if err != nil || parsedYear < 1900 || parsedYear > currentYear+1 {
 		return "", "", "", false
 	}
-	return n, w, d, true
+
+	return n, w, year, true
 }
