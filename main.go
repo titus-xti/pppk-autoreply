@@ -221,24 +221,61 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 	if raw == "" || raw == "<non-text message>" {
 		return
 	}
-	name, wilayah, dob, ok := parseRegistration(raw)
+	name, wilayah, dob, msg, ok := parseRegistration(raw)
 	var reply string
 	if ok {
-		reply = fmt.Sprintf("Terima kasih!\nPendaftaran pemilihan online berhasil dengan data sebagai berikut:\nNama=%s\nWilayah=%s\nTahun Lahir=%s", name, wilayah, dob)
+		// Check if already registered
+		db, err := sql.Open("postgres", "postgres://postgres:Gkjp2025@134.209.100.169:5432/vote?sslmode=disable")
+		if err != nil {
+			log.Printf("Error connecting to database: %v", err)
+			reply = "Maaf, terjadi kesalahan sistem. Silakan coba lagi nanti."
+		} else {
+			defer db.Close()
+
+			// Check if phone number already exists
+			var existingName, existingWilayah, existingDOB string
+			err = db.QueryRow("SELECT name, wilayah, year_of_birth FROM registration WHERE phone_number = $1",
+				v.Info.Sender.User).Scan(&existingName, &existingWilayah, &existingDOB)
+
+			if err == nil {
+				// Phone number exists, show existing data
+				reply = fmt.Sprintf("Anda sudah terdaftar sebelumnya dengan data:\nNama: %s\nWilayah: %s\nTahun Lahir: %s\n\nData tidak dapat diubah. \n\nHubungi panitia di nomor 081297898399 jika ada kesalahan data.",
+					existingName, existingWilayah, existingDOB)
+			} else if err == sql.ErrNoRows {
+				// Phone number doesn't exist, insert new registration
+				_, err = db.Exec(`
+                    INSERT INTO registration (name, wilayah, year_of_birth, phone_number, created_at)
+                    VALUES ($1, $2, $3, $4, NOW())
+                `, name, wilayah, dob, v.Info.Sender.User)
+
+				if err != nil {
+					log.Printf("Error saving to database: %v", err)
+					reply = "Maaf, terjadi kesalahan saat menyimpan data. Silakan coba lagi."
+				} else {
+					reply = fmt.Sprintf("Terima kasih!\nPendaftaran pemilihan online berhasil dengan data sebagai berikut:\nNama: %s\nWilayah: %s\nTahun Lahir: %s",
+						name, wilayah, dob)
+				}
+			} else {
+				// Other database error
+				log.Printf("Error querying database: %v", err)
+				reply = "Maaf, terjadi kesalahan sistem. Silakan coba lagi nanti."
+			}
+		}
 	} else {
-		reply = "Format pendaftaran salah.\nGunakan: DAFTAR-<nama lengkap jemaat>-<wilayah pelayanan>-<tahun lahir># \n\nTahun Lahir 4 Digit, Contoh: 1985\nWilayah pp1/pp2/serpong/bukit/reni\n\nContoh:\nDAFTAR-James Munthe-pp1-1972#\nDAFTAR-Maria Fatmitasari-pp2-1972#\nDAFTAR-Ery Setiawan-bukit-1972#\nDAFTAR-Florencia Irena-reni-1980#\nDAFTAR-Titus Adi Prasetyo-serpong-1985#"
+		reply = fmt.Sprintf("%s%sUntuk mendaftar pemilihan online, silahkan kirim pesan dengan format:\nDAFTAR-<nama lengkap jemaat>-<wilayah pelayanan>-<tahun lahir># \n\nTahun Lahir 4 Digit, Contoh: 1985\nWilayah pp1/pp2/serpong/bukit/reni\n\nContoh:\nDAFTAR-James Munthe-pp1-1972#\nDAFTAR-Maria Fatmitasari-pp2-1972#\nDAFTAR-Ery Setiawan-bukit-1972#\nDAFTAR-Florencia Irena-reni-1980#\nDAFTAR-Titus Adi Prasetyo-serpong-1985#", msg, "\n")
 	}
+
 	if err := sendWithRetry(ctx, client, v.Info.Chat, reply, 1, 2*time.Second); err != nil {
 		fmt.Println("auto-reply error:", err)
 	}
 }
 
 // parseRegistration parses text like: DAFTAR-<name>-<wilayah>-<year>#
-func parseRegistration(s string) (name, wilayah, dob string, ok bool) {
+func parseRegistration(s string) (name, wilayah, dob, message string, ok bool) {
 	re := regexp.MustCompile(`(?i)^DAFTAR-([^\-\r\n]+)-([^\-\r\n]+)-(\d{4})#$`)
 	m := re.FindStringSubmatch(strings.TrimSpace(s))
 	if len(m) != 4 {
-		return "", "", "", false
+		return "", "", "", "Syaloom Bp/Ibu,", false
 	}
 	n := strings.TrimSpace(m[1])
 	wRaw := strings.TrimSpace(m[2])
@@ -248,15 +285,15 @@ func parseRegistration(s string) (name, wilayah, dob string, ok bool) {
 	switch w {
 	case "pp1", "pp2", "serpong", "bukit", "reni":
 	default:
-		return "", "", "", false
+		return "", "", "", "Wilayah pelayanan tidak valid. Silahkan isi pp1/pp2/serpong/bukit/reni", false
 	}
 
 	// Validate year is between 1900 and current year + 1
 	currentYear := time.Now().Year()
 	parsedYear, err := strconv.Atoi(year)
 	if err != nil || parsedYear < 1900 || parsedYear > currentYear+1 {
-		return "", "", "", false
+		return "", "", "", "Tahun lahir tidak valid. Silahkan isi tahun lahir 4 digit", false
 	}
 
-	return n, w, year, true
+	return n, w, year, "", true
 }
