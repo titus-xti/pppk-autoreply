@@ -145,7 +145,7 @@ func makeEventHandler(ctx context.Context, client *whatsmeow.Client, initialJID 
 	}
 }
 
-// handleIncomingMessage logs, marks messages as read, and auto-replies "okay" to non-self messages
+// handleIncomingMessage logs, marks messages as read, and auto-replies to non-self messages
 func handleIncomingMessage(ctx context.Context, client *whatsmeow.Client, v *events.Message) {
 	from := v.Info.Sender.String()
 	chat := v.Info.Chat.String()
@@ -223,9 +223,9 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 	name, wilayah, dob, ok := parseRegistration(raw)
 	var reply string
 	if ok {
-		reply = fmt.Sprintf("Terima kasih. Data diterima:\nNama=%s\nWilayah=%s\nTgl Lahir=%s", name, wilayah, dob)
+		reply = fmt.Sprintf("Terima kasih!\nPendaftaran pemilihan online berhasil dengan data sebagai berikut:\nNama=%s\nWilayah=%s\nTahun Lahir=%s", name, wilayah, dob)
 	} else {
-		reply = "Format salah.\nGunakan: DAFTAR-NAMA-WILAYAH-TGL_LAHIR# \nTGL_LAHIR = DDMMYYYY\nWilayah pp1, pp2, serpong, bukit, reni\nContoh: DAFTAR-JOHN-pp1-01021990#"
+		reply = "Format pendaftaran salah.\nGunakan: DAFTAR-<nama lengkap jemaat>-<wilayah pelayanan>-<tahun lahir># \n\nTahun Lahir 4 Digit, Contoh: 1985\nWilayah pp1/pp2/serpong/bukit/reni\n\nContoh:\nDAFTAR-James Munthe-pp1-1972#\nDAFTAR-Maria Fatmitasari-pp2-1972#\nDAFTAR-Ery Setiawan-bukit-1972#\nDAFTAR-Florencia Irena-reni-1980#\nDAFTAR-Titus Adi Prasetyo-serpong-1985#"
 	}
 	if err := sendWithRetry(ctx, client, v.Info.Chat, reply, 1, 2*time.Second); err != nil {
 		fmt.Println("auto-reply error:", err)
