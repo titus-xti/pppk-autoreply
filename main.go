@@ -152,17 +152,36 @@ func handleIncomingMessage(ctx context.Context, client *whatsmeow.Client, v *eve
 	chat := v.Info.Chat.String()
 	text := messageText(v.Message)
 	if text == "" {
-		text = "<non-text message>"
+		// text = "<non-text message>"
+		// text, caption, ok := messageImage(v.Message)
+		// if ok {
+		// 	text = fmt.Sprintf("Image: %s\nCaption: %s", text, caption)
+		// }
+
+		imgMsg := v.Message.GetImageMessage()
+
+		// Download and decrypt the media
+		data, err := client.Download(ctx, imgMsg)
+		if err != nil {
+			log.Printf("Failed to download image: %v", err)
+		}
+
+		// Save it as a file
+		err = os.WriteFile("image.jpg", data, 0644)
+		if err != nil {
+			log.Printf("Failed to save image: %v", err)
+		}
+		fmt.Println("Image saved as image.jpg")
 	}
 	fmt.Printf("Incoming from %s in %s: %s\n", from, chat, text)
 
-	// Mark message as read
-	err := client.MarkRead([]string{v.Info.ID}, time.Now(), v.Info.Chat, v.Info.Sender)
-	if err != nil {
-		log.Printf("Error marking message as read: %v", err)
-	}
+	// // Mark message as read
+	// err := client.MarkRead([]string{v.Info.ID}, time.Now(), v.Info.Chat, v.Info.Sender)
+	// if err != nil {
+	// 	log.Printf("Error marking message as read: %v", err)
+	// }
 
-	autoReplyForIncoming(ctx, client, v)
+	// autoReplyForIncoming(ctx, client, v)
 }
 
 // handleConnected sends the initial message once after connection stabilizes
@@ -175,6 +194,7 @@ func handleConnected(ctx context.Context, client *whatsmeow.Client, to types.JID
 
 // sendWithRetry sends a plain text message with simple retries and fixed backoff
 func sendWithRetry(ctx context.Context, client *whatsmeow.Client, to types.JID, text string, attempts int, backoff time.Duration) error {
+	time.Sleep(2 * time.Second)
 	for i := 0; i < attempts; i++ {
 		if _, err := client.SendMessage(ctx, to, &waProto.Message{Conversation: protoStr(text)}); err != nil {
 			if i == attempts-1 {
@@ -210,6 +230,60 @@ func messageText(m *waProto.Message) string {
 		}
 	}
 	return ""
+}
+
+// messageImage extracts image information from a WhatsApp message proto.
+// Returns the image URL, caption (if any), and a boolean indicating if an image was found.
+func messageImage(m *waProto.Message) (string, string, bool) {
+	if m == nil {
+		return "", "", false
+	}
+
+	// Check for regular image message
+	if img := m.GetImageMessage(); img != nil {
+		caption := ""
+		if img.Caption != nil {
+			caption = *img.Caption
+		}
+
+		// The actual URL would need to be generated using whatsmeow's methods
+		// For now, we'll return the media key as a placeholder
+		return string(img.GetMediaKey()), caption, true
+	}
+
+	// Check for view once image
+	if vom := m.GetViewOnceMessage(); vom != nil {
+		return messageImage(vom.GetMessage())
+	}
+
+	// Check for ephemeral image
+	if em := m.GetEphemeralMessage(); em != nil {
+		return messageImage(em.GetMessage())
+	}
+
+	// Check for extended text message with image attachment
+	if etm := m.GetExtendedTextMessage(); etm != nil {
+		// In newer versions, check if this is a quoted message with an image
+		if etm.ContextInfo != nil && etm.ContextInfo.QuotedMessage != nil {
+			if imgMsg := etm.ContextInfo.QuotedMessage.GetImageMessage(); imgMsg != nil {
+				caption := ""
+				if etm.Text != nil {
+					caption = *etm.Text
+				}
+				return string(imgMsg.GetMediaKey()), caption, true
+			}
+		}
+		// Check if this is an image message with caption (in newer versions)
+		if imgMsg := m.GetImageMessage(); imgMsg != nil {
+			caption := ""
+			if etm.Text != nil {
+				caption = *etm.Text
+			}
+			return string(imgMsg.GetMediaKey()), caption, true
+		}
+	}
+
+	return "", "", false
 }
 
 // autoReplyForIncoming decides and sends an auto-reply based on message format
