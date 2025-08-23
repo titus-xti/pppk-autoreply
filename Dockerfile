@@ -34,5 +34,8 @@ COPY --from=builder /out/app /app/app
 # Switch to non-root user
 USER appuser
 
+# Expose HTTP port for pairing/logs UI
+EXPOSE 8080
+
 # Run the application
 ENTRYPOINT ["/app/app"]

@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"database/sql"
+	"bytes"
 	"fmt"
+	"net/http"
 	"log"
 	"os"
 	"os/signal"
@@ -25,6 +27,162 @@ import (
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
+// global container for creating new devices on re-pair
+var sqlContainer *sqlstore.Container
+
+// LogHub broadcasts log lines to SSE subscribers and keeps a small backlog
+type LogHub struct {
+    mu      sync.Mutex
+    subs    map[chan string]struct{}
+    backlog []string
+    maxBuf  int
+}
+
+// pairingPageHandler serves a minimal UI that streams logs via SSE
+func pairingPageHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "text/html; charset=utf-8")
+    _, _ = w.Write([]byte(`<!doctype html>
+<html><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>WhatsApp Pairing</title>
+<style>
+body { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin:0; background:#0b0f14; color:#e6edf3; }
+#bar { background:#11171f; padding:10px 14px; position:sticky; top:0; display:flex; gap:10px; align-items:center; }
+button{ background:#238636; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; }
+button.secondary{ background:#30363d; }
+#log { white-space:pre-wrap; padding:14px; line-height:1.4; }
+.qr { color:#9be9a8; }
+</style>
+</head>
+<body>
+  <div id="bar">
+    <strong>/pairing</strong>
+    <button id="clear" class="secondary">Clear</button>
+    <span id="status">connecting...</span>
+  </div>
+  <div id="log"></div>
+  <script>
+  const log = document.getElementById('log');
+  const status = document.getElementById('status');
+  document.getElementById('clear').onclick = () => { log.textContent = ''; };
+  function append(line){
+    const div = document.createElement('div');
+    if(line.includes('Scan the QR code')) div.className='qr';
+    div.textContent = line;
+    log.appendChild(div);
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+  function connect(){
+    const es = new EventSource('/events');
+    es.onopen = () => { status.textContent='connected'; };
+    es.onmessage = (ev) => append(ev.data);
+    es.onerror = () => { status.textContent='disconnected, retrying...'; es.close(); setTimeout(connect, 2000); };
+  }
+  connect();
+  </script>
+</body></html>`))
+}
+
+// sseEventsHandler streams log lines to the browser via SSE including backlog
+func sseEventsHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "text/event-stream")
+    w.Header().Set("Cache-Control", "no-cache")
+    w.Header().Set("Connection", "keep-alive")
+    // Allow cross-origin simple access if needed
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+
+    flusher, ok := w.(http.Flusher)
+    if !ok {
+        http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+        return
+    }
+
+    ch, backlog, cancel := hub.Subscribe()
+    defer cancel()
+
+    // Send backlog first
+    for _, line := range backlog {
+        fmt.Fprintf(w, "data: %s\n\n", line)
+    }
+    flusher.Flush()
+
+    // Heartbeat ticker
+    ticker := time.NewTicker(15 * time.Second)
+    defer ticker.Stop()
+
+    ctx := r.Context()
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case line := <-ch:
+            fmt.Fprintf(w, "data: %s\n\n", line)
+            flusher.Flush()
+        case <-ticker.C:
+            fmt.Fprintf(w, ": ping\n\n")
+            flusher.Flush()
+        }
+    }
+}
+
+var hub = &LogHub{subs: make(map[chan string]struct{}), maxBuf: 500}
+
+func (h *LogHub) Broadcast(line string) {
+    h.mu.Lock()
+    // append to backlog
+    h.backlog = append(h.backlog, line)
+    if len(h.backlog) > h.maxBuf {
+        h.backlog = h.backlog[len(h.backlog)-h.maxBuf:]
+    }
+    // send to subscribers (non-blocking)
+    for ch := range h.subs {
+        select { case ch <- line: default: }
+    }
+    h.mu.Unlock()
+}
+
+func (h *LogHub) Subscribe() (ch chan string, backlog []string, cancel func()) {
+    ch = make(chan string, 100)
+    h.mu.Lock()
+    h.subs[ch] = struct{}{}
+    // copy backlog
+    if len(h.backlog) > 0 {
+        backlog = append(backlog, h.backlog...)
+    }
+    h.mu.Unlock()
+    cancel = func() {
+        h.mu.Lock()
+        delete(h.subs, ch)
+        close(ch)
+        h.mu.Unlock()
+    }
+    return
+}
+
+// logf writes to stdout and broadcasts to SSE clients
+func logf(format string, args ...interface{}) {
+    msg := fmt.Sprintf(format, args...)
+    fmt.Print(msg)
+    if len(msg) == 0 || msg[len(msg)-1] != '\n' {
+        hub.Broadcast(msg)
+    } else {
+        hub.Broadcast(strings.TrimRight(msg, "\n"))
+    }
+}
+
+// broadcastQR generates the half-block QR to an in-memory buffer and
+// broadcasts it line-by-line to SSE clients so it renders in the web UI.
+func broadcastQR(code string) {
+    var buf bytes.Buffer
+    qrcode.GenerateHalfBlock(code, qrcode.L, &buf)
+    for _, line := range strings.Split(strings.TrimRight(buf.String(), "\n"), "\n") {
+        if line == "" {
+            continue
+        }
+        hub.Broadcast(line)
+    }
+}
+
 func main() {
 	msg := `autoreplyon`
 
@@ -33,8 +191,20 @@ func main() {
 	if latest, err := whatsmeow.GetLatestVersion(ctx, nil); err == nil {
 		store.SetWAVersion(*latest)
 	} else {
-		fmt.Println("warn: failed to get latest WA version:", err)
+		logf("warn: failed to get latest WA version: %v\n", err)
 	}
+
+	// Start HTTP server for pairing/logs
+	go func() {
+		http.HandleFunc("/pairing", pairingPageHandler)
+		http.HandleFunc("/events", sseEventsHandler)
+		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK); _, _ = w.Write([]byte("ok")) })
+		addr := ":8080"
+		logf("HTTP server listening on %s. Open http://localhost%s/pairing\n", addr, addr)
+		if err := http.ListenAndServe(addr, nil); err != nil {
+			logf("HTTP server error: %v\n", err)
+		}
+	}()
 
 	// Initialize logger
 	logger := waLog.Stdout("Database", "DEBUG", true)
@@ -55,6 +225,7 @@ func main() {
 
 	// Initialize the PostgreSQL database with the required schema
 	sqlStore := sqlstore.NewWithDB(db, "postgres", logger)
+	sqlContainer = sqlStore
 
 	// Ensure the database tables are created
 	err = sqlStore.Upgrade(ctx)
@@ -79,7 +250,7 @@ func main() {
 
 	// If first login (no session yet), request pairing code
 	if client.Store.ID == nil {
-		fmt.Println("🔑 No session found, pairing required...")
+		logf("🔑 No session found, pairing required...\n")
 
 		// Get the QR code channel before connecting
 		qrChan, err := client.GetQRChannel(context.Background())
@@ -95,23 +266,23 @@ func main() {
 		for evt := range qrChan {
 			switch evt.Event {
 			case "code":
-				fmt.Println("\n🔍 Scan the QR code with your phone (WhatsApp → Linked Devices → Link a Device):")
-				qrcode.GenerateHalfBlock(evt.Code, qrcode.L, os.Stdout)
+				logf("\n🔍 Scan the QR code with your phone (WhatsApp → Linked Devices → Link a Device):\n")
+				broadcastQR(evt.Code)
 			case "success":
-				fmt.Println("\n✅ Successfully paired with WhatsApp!")
+				logf("\n✅ Successfully paired with WhatsApp!\n")
 			case "timeout":
-				fmt.Println("\n❌ QR code expired. Please restart the application to generate a new one.")
+				logf("\n❌ QR code expired. Please restart the application to generate a new one.\n")
 				return
 			case "error":
-				fmt.Printf("\n❌ Login error: %v\n", evt.Error)
+				logf("\n❌ Login error: %v\n", evt.Error)
 				if evt.Error != nil {
-					fmt.Printf("Error details: %+v\n", evt.Error)
+					logf("Error details: %+v\n", evt.Error)
 				}
 				return
 			default:
-				fmt.Printf("\nℹ️  Login event: %s\n", evt.Event)
+				logf("\nℹ️  Login event: %s\n", evt.Event)
 				if evt.Error != nil {
-					fmt.Printf("Error details: %+v\n", evt.Error)
+					logf("Error details: %+v\n", evt.Error)
 				}
 			}
 		}
@@ -142,6 +313,9 @@ func makeEventHandler(ctx context.Context, client *whatsmeow.Client, initialJID 
 			once.Do(func() {
 				go handleConnected(ctx, client, initialJID, initialMsg)
 			})
+		case *events.LoggedOut:
+			// Device was unlinked/logged out from phone or main device changed
+			go handleLoggedOut(ctx, client, initialJID, v)
 		}
 	}
 }
@@ -154,12 +328,12 @@ func handleIncomingMessage(ctx context.Context, client *whatsmeow.Client, v *eve
 	if text == "" {
 		text = "<non-text message>"
 	}
-	fmt.Printf("Incoming from %s in %s: %s\n", from, chat, text)
+	logf("Incoming from %s in %s: %s\n", from, chat, text)
 
 	// Mark message as read
 	err := client.MarkRead([]string{v.Info.ID}, time.Now(), v.Info.Chat, v.Info.Sender)
 	if err != nil {
-		log.Printf("Error marking message as read: %v", err)
+		logf("Error marking message as read: %v\n", err)
 	}
 
 	autoReplyForIncoming(ctx, client, v)
@@ -169,8 +343,114 @@ func handleIncomingMessage(ctx context.Context, client *whatsmeow.Client, v *eve
 func handleConnected(ctx context.Context, client *whatsmeow.Client, to types.JID, initialMsg string) {
 	time.Sleep(1 * time.Second)
 	if err := sendWithRetry(ctx, client, to, initialMsg, 5, 2*time.Second); err != nil {
-		fmt.Println("send error:", err)
+		logf("send error: %v\n", err)
 	}
+}
+
+// handleLoggedOut notifies and logs when the session gets unlinked/logged out
+func handleLoggedOut(ctx context.Context, client *whatsmeow.Client, to types.JID, ev *events.LoggedOut) {
+	// Build human-friendly reason
+	var reason string
+	if ev.OnConnect {
+		// Triggered by a connect failure
+		reason = fmt.Sprintf("Reason %s (%s)", ev.Reason.String(), ev.Reason.NumberString())
+	} else {
+		// Triggered by a stream:error while connected
+		reason = "stream error while connected"
+	}
+
+	msg := fmt.Sprintf("This device was unlinked from WhatsApp. %s. Please re-link to continue.", reason)
+	logf("%s\n", msg)
+	// Try to notify the admin/initial JID; may fail if already disconnected
+	_ = sendWithRetry(ctx, client, to, msg, 1, 2*time.Second)
+
+    // Ensure we stop current connection
+    client.Disconnect()
+
+    // Delete current device state from store to allow clean re-pairing
+    if err := client.Store.Delete(ctx); err != nil {
+        		logf("failed to delete device store: %v\n", err)
+	}
+    // Extra safety: clean up any leftover devices to avoid FK issues
+    if err := cleanupAllDevices(ctx); err != nil {
+        		logf("failed to cleanup all devices: %v\n", err)
+	}
+    // Create/fetch a persisted fresh device store and client so inserts reference a valid our_jid
+    newStore, err := sqlContainer.GetFirstDevice(ctx)
+    if err != nil {
+        		logf("failed to get new device store: %v\n", err)
+		return
+	}
+    if newStore == nil {
+        newStore = sqlContainer.NewDevice()
+    }
+    newClient := whatsmeow.NewClient(newStore, nil)
+
+    // Re-attach event handler for the new client
+    newClient.AddEventHandler(makeEventHandler(ctx, newClient, to, "autoreplyon"))
+
+    // Start QR pairing flow to allow re-linking immediately with a fresh device
+    go startPairingFlow(context.Background(), newClient)
+}
+
+// startPairingFlow starts the QR pairing flow
+func startPairingFlow(ctx context.Context, client *whatsmeow.Client) {
+    // Keep trying to get fresh QR codes until paired successfully
+    for {
+        // Get the QR code channel before connecting
+        qrChan, err := client.GetQRChannel(ctx)
+        if err != nil {
+            			logf("Failed to get QR channel: %v\n", err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+        // Connect to WhatsApp
+        if err := client.Connect(); err != nil {
+            			logf("Failed to connect: %v\n", err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+        // Handle QR events until success/timeout/error
+        retry := false
+    QRChanLoop:
+        for evt := range qrChan {
+            switch evt.Event {
+            case "code":
+                logf("\n🔍 Scan the QR code with your phone (WhatsApp → Linked Devices → Link a Device):\n")
+                broadcastQR(evt.Code)
+            case "success":
+                logf("\n✅ Successfully paired with WhatsApp!")
+                return
+            case "timeout":
+                				logf("\n⏳ QR code expired. Generating a fresh QR...\n")
+                retry = true
+                break QRChanLoop
+            case "error":
+                logf("\n❌ Login error: %v\n", evt.Error)
+                if evt.Error != nil {
+                    logf("Error details: %+v\n", evt.Error)
+                }
+                retry = true
+                break QRChanLoop
+            default:
+                logf("\nℹ️  Login event: %s\n", evt.Event)
+                if evt.Error != nil {
+                    logf("Error details: %+v\n", evt.Error)
+                }
+            }
+        }
+
+        if retry {
+            // Small backoff before fetching a new QR
+            time.Sleep(2 * time.Second)
+            continue
+        }
+
+        // If channel closed without success or explicit retry, pause and try again
+        time.Sleep(2 * time.Second)
+    }
 }
 
 // sendWithRetry sends a plain text message with simple retries and fixed backoff
@@ -266,7 +546,7 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 	}
 
 	if err := sendWithRetry(ctx, client, v.Info.Chat, reply, 1, 2*time.Second); err != nil {
-		fmt.Println("auto-reply error:", err)
+		logf("auto-reply error: %v\n", err)
 	}
 }
 
@@ -296,4 +576,21 @@ func parseRegistration(s string) (name, wilayah, dob, message string, ok bool) {
 	}
 
 	return n, w, year, "", true
+}
+
+// cleanupAllDevices removes all whatsmeow device rows from the SQL store
+func cleanupAllDevices(ctx context.Context) error {
+    if sqlContainer == nil {
+        return nil
+    }
+    devs, err := sqlContainer.GetAllDevices(ctx)
+    if err != nil {
+        return err
+    }
+    for _, d := range devs {
+        if err := d.Delete(ctx); err != nil {
+            return err
+        }
+    }
+    return nil
 }
