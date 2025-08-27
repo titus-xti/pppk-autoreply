@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"regexp"
@@ -11,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	_ "github.com/lib/pq"
+	"go-whatsapp.mastitus.my.id/repository"
 	"go.mau.fi/whatsmeow"
 	waProto "go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
@@ -220,6 +219,19 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 		return
 	}
 
+	// Pre-check: ensure the sender's phone is registered in vote_master
+	// If not registered, immediately inform and return
+	{
+		phone := v.Info.Sender.User
+		ok, chkErr := repository.VoteMasterPhoneExists(phone)
+		if chkErr != nil {
+			log.Printf("vote_master check error: %v", chkErr)
+		} else if !ok {
+			_ = sendWithRetry(ctx, client, v.Info.Chat, addBackHint("Nomor anda belum terdaftar"), 1, 2*time.Second)
+			return
+		}
+	}
+
 	// Normalize user input
 	lower := strings.ToLower(raw)
 
@@ -272,41 +284,20 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 		name, wilayah, dob, msg, ok := parseRegistration(raw)
 		var reply string
 		if ok {
-			// Check if already registered
-			db, err := sql.Open("postgres", "postgres://postgres:Gkjp2025@134.209.100.169:5432/vote?sslmode=disable")
+			existingName, existingWilayah, existingDOB, found, err := repository.GetRegistrationByPhone(v.Info.Sender.User)
 			if err != nil {
-				log.Printf("Error connecting to database: %v", err)
+				log.Printf("Error querying database: %v", err)
 				reply = "Maaf, terjadi kesalahan sistem. Silakan coba lagi nanti."
+			} else if found {
+				reply = fmt.Sprintf("Anda sudah terdaftar sebelumnya dengan data:\nNama: %s\nWilayah: %s\nTahun Lahir: %s\n\nData tidak dapat diubah. \n\nHubungi panitia di nomor 081297898399 jika ada kesalahan data.",
+					existingName, existingWilayah, existingDOB)
 			} else {
-				defer db.Close()
-
-				// Check if phone number already exists
-				var existingName, existingWilayah, existingDOB string
-				err = db.QueryRow("SELECT name, wilayah, year_of_birth FROM registration WHERE phone_number = $1",
-					v.Info.Sender.User).Scan(&existingName, &existingWilayah, &existingDOB)
-
-				if err == nil {
-					// Phone number exists, show existing data
-					reply = fmt.Sprintf("Anda sudah terdaftar sebelumnya dengan data:\nNama: %s\nWilayah: %s\nTahun Lahir: %s\n\nData tidak dapat diubah. \n\nHubungi panitia di nomor 081297898399 jika ada kesalahan data.",
-						existingName, existingWilayah, existingDOB)
-				} else if err == sql.ErrNoRows {
-					// Phone number doesn't exist, insert new registration
-					_, err = db.Exec(`
-                        INSERT INTO registration (name, wilayah, year_of_birth, phone_number, created_at)
-                        VALUES ($1, $2, $3, $4, NOW())
-                    `, strings.ToUpper(name), strings.ToUpper(wilayah), dob, v.Info.Sender.User)
-
-					if err != nil {
-						log.Printf("Error saving to database: %v", err)
-						reply = "Maaf, terjadi kesalahan saat menyimpan data. Silakan coba lagi."
-					} else {
-						reply = fmt.Sprintf("Terima kasih!\nPendaftaran pemilihan online berhasil dengan data sebagai berikut:\nNama: %s\nWilayah: %s\nTahun Lahir: %s\n\nKetik 'back to main menu' untuk kembali ke menu.",
-							name, wilayah, dob)
-					}
+				if err := repository.InsertRegistration(strings.ToUpper(name), strings.ToUpper(wilayah), dob, v.Info.Sender.User); err != nil {
+					log.Printf("Error saving to database: %v", err)
+					reply = "Maaf, terjadi kesalahan saat menyimpan data. Silakan coba lagi."
 				} else {
-					// Other database error
-					log.Printf("Error querying database: %v", err)
-					reply = "Maaf, terjadi kesalahan sistem. Silakan coba lagi nanti."
+					reply = fmt.Sprintf("Terima kasih!\nPendaftaran pemilihan online berhasil dengan data sebagai berikut:\nNama: %s\nWilayah: %s\nTahun Lahir: %s\n\nKetik 'back to main menu' untuk kembali ke menu.",
+						name, wilayah, dob)
 				}
 			}
 		} else {

@@ -9,6 +9,7 @@ import (
     "os/signal"
     "syscall"
 
+    "go-whatsapp.mastitus.my.id/repository"
     _ "github.com/lib/pq"
     "go.mau.fi/whatsmeow"
     "go.mau.fi/whatsmeow/store"
@@ -21,6 +22,11 @@ func main() {
     msg := `autoreplyon`
 
     ctx := context.Background()
+    // init repository pool (pgx)
+    if err := repository.Init(ctx); err != nil {
+        panic(fmt.Errorf("failed to init repository: %w", err))
+    }
+    defer repository.Close()
     // Set latest WhatsApp Web version to avoid version mismatch issues
     if latest, err := whatsmeow.GetLatestVersion(ctx, nil); err == nil {
         store.SetWAVersion(*latest)
