@@ -215,9 +215,6 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 		return
 	}
 	raw := strings.TrimSpace(messageText(v.Message))
-	if raw == "" || raw == "<non-text message>" {
-		return
-	}
 
 	// Pre-check: ensure the sender's phone is registered in vote_master
 	// If not registered, immediately inform and return. If registered, capture name for greeting.
@@ -227,6 +224,8 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 		nm, chkErr := repository.VoteMasterPhoneExists(phone)
 		if chkErr != nil {
 			log.Printf("vote_master check error: %v", chkErr)
+			_ = sendWithRetry(ctx, client, v.Info.Chat, addBackHint(ErrorQuerying), 1, 2*time.Second)
+			return
 		} else if strings.TrimSpace(nm) == "" {
 			_ = sendWithRetry(ctx, client, v.Info.Chat, addBackHint(NotRegistered), 1, 2*time.Second)
 			return
@@ -241,6 +240,27 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 	// Session key per sender number
 	key := v.Info.Sender.User
 
+	// If this is a new or expired session, always show the main menu with greeting
+	if _, isNew := getSessionWithNew(key); isNew {
+		reply := menuText(greetName)
+		if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(reply), 1, 2*time.Second); err != nil {
+			logf("auto-reply error: %v\n", err)
+		}
+		return
+	}
+
+	// Fetch current session state
+	sess := getSession(key)
+
+	// If we're in Info or ResendVote modes, user should only type 0/menu to go back.
+	// For any other input, resend the back hint and ignore content.
+	if (sess.Mode == ModeInfo || sess.Mode == ModeResendVote) && !(lower == "0" || lower == "menu" || strings.Contains(lower, "back to main menu")) {
+		if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(""), 1, 2*time.Second); err != nil {
+			logf("auto-reply error: %v\n", err)
+		}
+		return
+	}
+
 	// Global command: back to menu
 	if strings.Contains(lower, "back to main menu") || lower == "menu" || lower == "0" {
 		setSessionMode(key, ModeMenu)
@@ -250,8 +270,6 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 		}
 		return
 	}
-
-	sess := getSession(key)
 
 	switch sess.Mode {
 	case ModeMenu:
@@ -348,10 +366,10 @@ func infoPemilihanHelp(prefix string) string {
 }
 
 func addBackHint(s string) string {
-	if strings.Contains(strings.ToLower(s), backHint) {
-		return s
-	}
-	return s + backHint
+    if strings.Contains(strings.ToLower(s), strings.ToLower(backHint)) {
+        return s
+    }
+    return s + backHint
 }
 
 // parseRegistration parses text like: DAFTAR-<name>-<wilayah>-<year>#

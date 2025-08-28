@@ -70,5 +70,5 @@ Hubungi panitia jika ada kesalahan data.`
 )
 
 const (
-	backHint = "\n\nketik 0 untuk kembali ke menu utama"
+	backHint = "\n\nKetik 0 untuk kembali ke menu utama"
 )

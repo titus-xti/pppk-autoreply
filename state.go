@@ -51,6 +51,25 @@ func getSession(key string) *Session {
 	return s
 }
 
+// getSessionWithNew is like getSession but also returns whether the session
+// is newly created or has just been reset due to TTL expiry. Use this to
+// trigger first-message greetings.
+func getSessionWithNew(key string) (*Session, bool) {
+	sessionsMu.Lock()
+	defer sessionsMu.Unlock()
+	if s, ok := sessions[key]; ok {
+		if time.Since(s.Updated) > sessionTTL {
+			s.Mode = ModeMenu
+			s.Updated = time.Now()
+			return s, true
+		}
+		return s, false
+	}
+	s := &Session{Mode: ModeMenu, Updated: time.Now()}
+	sessions[key] = s
+	return s, true
+}
+
 func setSessionMode(key string, mode ChatMode) {
 	sessionsMu.Lock()
 	if s, ok := sessions[key]; ok {
