@@ -57,6 +57,9 @@ https://pemilihan.gkj-pamulang.org/%s
 
 Simpan surat suara digital ini dengan aman.`
 
+	NotYetRegistered = `Anda belum terdaftar di dalam pemilihan online,
+Silahkan melakukan pendaftaran terlebih dahulu`
+
 	AlreadyRegistered = `Anda sudah terdaftar sebelumnya dengan data:
 Nama: %s
 Wilayah: %s

@@ -337,6 +337,9 @@ func resendVoteHelp(prefix string, v *events.Message) string {
 	if err != nil {
 		return ErrorQuerying
 	}
+	if code == "" {
+		return NotYetRegistered
+	}
 	return fmt.Sprintf(ResendVoteHelp, prefix, code)
 }
 
