@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -51,11 +52,13 @@ func VoteMasterPhoneExists(phone string) (string, error) {
 		return "", errors.New("repository not initialized: call repository.Init")
 	}
 	var name string
-	err := pool.QueryRow(context.Background(), "SELECT name FROM vote_master WHERE phone_number = $1 LIMIT 1", phone).Scan(&name)
+	err := pool.QueryRow(context.Background(), "SELECT name FROM vote_master WHERE phone = $1 LIMIT 1", phone).Scan(&name)
 	if errors.Is(err, pgx.ErrNoRows) {
+		log.Printf("vote_master check error: %v", err)
 		return "", nil
 	}
 	if err != nil {
+		log.Printf("vote_master check error: %v", err)
 		return "", err
 	}
 	return name, nil
@@ -69,9 +72,11 @@ func GetRegistrationByPhone(phone string) (name, wilayah, year string, found boo
 	err = pool.QueryRow(context.Background(), "SELECT name, wilayah, year_of_birth FROM registration WHERE phone_number = $1", phone).
 		Scan(&name, &wilayah, &year)
 	if errors.Is(err, pgx.ErrNoRows) {
+		log.Printf("registration check error: %v", err)
 		return "", "", "", false, nil
 	}
 	if err != nil {
+		log.Printf("registration check error: %v", err)
 		return "", "", "", false, err
 	}
 	return name, wilayah, year, true, nil
@@ -87,6 +92,7 @@ func InsertRegistration(name, wilayah, year, phone string) error {
 		VALUES ($1, $2, $3, $4, NOW())
 	`, name, wilayah, year, phone)
 	if err != nil {
+		log.Printf("insert registration error: %v", err)
 		return fmt.Errorf("insert registration: %w", err)
 	}
 	return nil
