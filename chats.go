@@ -17,13 +17,13 @@ var (
 	ErrorDOB      = `Tahun lahir tidak valid. Silahkan isi tahun lahir 4 digit`
 
 	SuccessRegister = `Terima kasih!
+	
 	Pendaftaran pemilihan online berhasil dengan data sebagai berikut:
 	Nama: %s
 	Wilayah: %s
 	Tahun Lahir: %s
 	Surat suara Digital: https://pemilihan.gkj-pamulang.org/%s
-	Silahkan surat suara Digital ini dengan aman.
-	Ketik '0' untuk kembali ke menu.`
+	Simpan surat suara digital ini dengan aman.`
 
 	RegistrationHelp = `%sUntuk mendaftar pemilihan online, silahkan kirim pesan dengan format:
 	DAFTAR-<nama lengkap jemaat>-<wilayah pelayanan>-<tahun lahir># 
@@ -42,7 +42,11 @@ var (
 	Untuk informasi lebih lanjut, silahkan menghubungi Majelis Wilayah
 	dan Panitia di nomor 081297898399`
 
-	ResendVoteHelp = `%sBerikut ini surat suara Digital Anda : `
+	ResendVoteHelp = `%sBerikut ini surat suara Digital Anda : 
+	
+	https://pemilihan.gkj-pamulang.org/%s
+	
+	Simpan surat suara digital ini dengan aman.`
 
 	AlreadyRegistered = `Anda sudah terdaftar sebelumnya dengan data:
 	Nama: %s
@@ -54,5 +58,5 @@ var (
 )
 
 const (
-	backHint = "ketik 0 untuk kembali ke menu utama"
+	backHint = "\n\nketik 0 untuk kembali ke menu utama"
 )

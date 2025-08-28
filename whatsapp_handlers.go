@@ -271,7 +271,7 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 			return
 		case "3":
 			setSessionMode(key, ModeResendVote)
-			if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(resendVoteHelp("")), 1, 2*time.Second); err != nil {
+			if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(resendVoteHelp("", v)), 1, 2*time.Second); err != nil {
 				logf("auto-reply error: %v\n", err)
 			}
 			return
@@ -332,8 +332,12 @@ func registrationHelp(prefix string) string {
 	return fmt.Sprintf(RegistrationHelp, prefix)
 }
 
-func resendVoteHelp(prefix string) string {
-	return fmt.Sprintf(ResendVoteHelp, prefix)
+func resendVoteHelp(prefix string, v *events.Message) string {
+	code, err := repository.GetVoterCodeByPhone(v.Info.Sender.User)
+	if err != nil {
+		return ErrorQuerying
+	}
+	return fmt.Sprintf(ResendVoteHelp, prefix, code)
 }
 
 func infoPemilihanHelp(prefix string) string {

@@ -117,3 +117,21 @@ func InsertVoters(name, phone string) (string, error) {
 	}
 	return code, nil
 }
+
+// GetVoterCodeByPhone returns the code for the given phone from voters.
+func GetVoterCodeByPhone(phone string) (string, error) {
+	if pool == nil {
+		return "", errors.New("repository not initialized: call repository.Init")
+	}
+	var code string
+	err := pool.QueryRow(context.Background(), "SELECT code FROM voters WHERE phone = $1 LIMIT 1", phone).Scan(&code)
+	if errors.Is(err, pgx.ErrNoRows) {
+		log.Printf("voter check error: %v", err)
+		return "", nil
+	}
+	if err != nil {
+		log.Printf("voter check error: %v", err)
+		return "", err
+	}
+	return code, nil
+}
