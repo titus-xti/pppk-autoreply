@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -96,4 +97,23 @@ func InsertRegistration(name, wilayah, year, phone string) error {
 		return fmt.Errorf("insert registration: %w", err)
 	}
 	return nil
+}
+
+// InsertVoters inserts a new voters row
+func InsertVoters(name, phone string) (string, error) {
+
+	code := uuid.New().String()
+
+	if pool == nil {
+		return "", errors.New("repository not initialized: call repository.Init")
+	}
+	_, err := pool.Exec(context.Background(), `
+		INSERT INTO voters (code, name, phone)
+		VALUES ($1, $2, $3)
+	`, code, name, phone)
+	if err != nil {
+		log.Printf("insert voters error: %v", err)
+		return "", fmt.Errorf("insert voters: %w", err)
+	}
+	return code, nil
 }

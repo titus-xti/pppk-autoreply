@@ -21,6 +21,8 @@ var (
 	Nama: %s\n
 	Wilayah: %s\n
 	Tahun Lahir: %s\n\n
+	Surat suara Digital: https://pemilihan.gkj-pamulang.org/%s\n\n
+	Silahkan surat suara Digital ini dengan aman.\n\n
 	Ketik '0' untuk kembali ke menu.`
 
 	RegistrationHelp = `%sUntuk mendaftar pemilihan online, silahkan kirim pesan dengan format:\n

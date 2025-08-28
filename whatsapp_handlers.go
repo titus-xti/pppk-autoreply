@@ -299,8 +299,14 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 					log.Printf("Error saving to database: %v", err)
 					reply = ErrorSaving
 				} else {
-					reply = fmt.Sprintf(SuccessRegister,
-						name, wilayah, dob)
+					code, err := repository.InsertVoters(name, v.Info.Sender.User)
+					if err != nil {
+						log.Printf("Error saving to database: %v", err)
+						reply = ErrorSaving
+					} else {
+						reply = fmt.Sprintf(SuccessRegister,
+							name, wilayah, dob, code)
+					}
 				}
 			}
 		} else {
