@@ -219,18 +219,21 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 		return
 	}
 
-	// Pre-check: ensure the sender's phone is registered in vote_master
-	// If not registered, immediately inform and return
-	{
-		phone := v.Info.Sender.User
-		ok, chkErr := repository.VoteMasterPhoneExists(phone)
-		if chkErr != nil {
-			log.Printf("vote_master check error: %v", chkErr)
-		} else if !ok {
-			_ = sendWithRetry(ctx, client, v.Info.Chat, addBackHint("Nomor anda belum terdaftar"), 1, 2*time.Second)
-			return
-		}
-	}
+    // Pre-check: ensure the sender's phone is registered in vote_master
+    // If not registered, immediately inform and return. If registered, capture name for greeting.
+    var greetName string
+    {
+        phone := v.Info.Sender.User
+        nm, chkErr := repository.VoteMasterPhoneExists(phone)
+        if chkErr != nil {
+            log.Printf("vote_master check error: %v", chkErr)
+        } else if strings.TrimSpace(nm) == "" {
+            _ = sendWithRetry(ctx, client, v.Info.Chat, addBackHint("Nomor anda belum terdaftar"), 1, 2*time.Second)
+            return
+        } else {
+            greetName = nm
+        }
+    }
 
 	// Normalize user input
 	lower := strings.ToLower(raw)
@@ -241,7 +244,7 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 	// Global command: back to menu
 	if strings.Contains(lower, "back to main menu") || lower == "menu" || lower == "0" {
 		setSessionMode(key, ModeMenu)
-		reply := menuText()
+		reply := menuText(greetName)
 		if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(reply), 1, 2*time.Second); err != nil {
 			logf("auto-reply error: %v\n", err)
 		}
@@ -274,7 +277,7 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 			return
 		default:
 			// Default: show menu if not recognized
-			if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(menuText()), 1, 2*time.Second); err != nil {
+			if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(menuText(greetName)), 1, 2*time.Second); err != nil {
 				logf("auto-reply error: %v\n", err)
 			}
 			return
@@ -311,8 +314,12 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 	}
 }
 
-func menuText() string {
-	return "Selamat datang di Asisten Virtual PPPK GKJP:\n1. Info Pemilihan\n2. Registrasi pemilihan Online\n3. Kirim ulang surat suara Digital\n\nBalas dengan angka: 1, 2 atau 3."
+func menuText(name string) string {
+    base := "Selamat datang di Asisten Virtual PPPK GKJP:\n1. Info Pemilihan\n2. Registrasi pemilihan Online\n3. Kirim ulang surat suara Digital\n\nBalas dengan angka: 1, 2 atau 3."
+    if strings.TrimSpace(name) != "" {
+        return fmt.Sprintf("Syaloom %s,\n\n%s", name, base)
+    }
+    return base
 }
 
 func registrationHelp(prefix string) string {

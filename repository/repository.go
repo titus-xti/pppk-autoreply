@@ -44,20 +44,21 @@ func Close() {
 	}
 }
 
-// VoteMasterPhoneExists checks whether a given phone exists in vote_master.phone_number
-func VoteMasterPhoneExists(phone string) (bool, error) {
+// VoteMasterPhoneExists returns the name for the given phone from vote_master.
+// If the returned name is an empty string, the phone is not registered.
+func VoteMasterPhoneExists(phone string) (string, error) {
 	if pool == nil {
-		return false, errors.New("repository not initialized: call repository.Init")
+		return "", errors.New("repository not initialized: call repository.Init")
 	}
-	var x int
-	err := pool.QueryRow(context.Background(), "SELECT 1 FROM vote_master WHERE phone_number = $1 LIMIT 1", phone).Scan(&x)
+	var name string
+	err := pool.QueryRow(context.Background(), "SELECT name FROM vote_master WHERE phone_number = $1 LIMIT 1", phone).Scan(&name)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return false, nil
+		return "", nil
 	}
 	if err != nil {
-		return false, err
+		return "", err
 	}
-	return true, nil
+	return name, nil
 }
 
 // GetRegistrationByPhone returns registration data for phone_number if exists
