@@ -31,6 +31,9 @@ var (
 	sessionsMu sync.Mutex
 )
 
+// sessionTTL defines how long a session is considered valid since last update
+const sessionTTL = 15 * time.Minute
+
 func getSession(key string) *Session {
 	sessionsMu.Lock()
 	defer sessionsMu.Unlock()
@@ -38,6 +41,12 @@ func getSession(key string) *Session {
 	if !ok {
 		s = &Session{Mode: ModeMenu, Updated: time.Now()}
 		sessions[key] = s
+		return s
+	}
+	// Expire session if TTL passed
+	if time.Since(s.Updated) > sessionTTL {
+		s.Mode = ModeMenu
+		s.Updated = time.Now()
 	}
 	return s
 }
