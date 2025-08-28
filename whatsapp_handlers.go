@@ -219,21 +219,21 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 		return
 	}
 
-    // Pre-check: ensure the sender's phone is registered in vote_master
-    // If not registered, immediately inform and return. If registered, capture name for greeting.
-    var greetName string
-    {
-        phone := v.Info.Sender.User
-        nm, chkErr := repository.VoteMasterPhoneExists(phone)
-        if chkErr != nil {
-            log.Printf("vote_master check error: %v", chkErr)
-        } else if strings.TrimSpace(nm) == "" {
-            _ = sendWithRetry(ctx, client, v.Info.Chat, addBackHint("Nomor anda belum terdaftar"), 1, 2*time.Second)
-            return
-        } else {
-            greetName = nm
-        }
-    }
+	// Pre-check: ensure the sender's phone is registered in vote_master
+	// If not registered, immediately inform and return. If registered, capture name for greeting.
+	var greetName string
+	{
+		phone := v.Info.Sender.User
+		nm, chkErr := repository.VoteMasterPhoneExists(phone)
+		if chkErr != nil {
+			log.Printf("vote_master check error: %v", chkErr)
+		} else if strings.TrimSpace(nm) == "" {
+			_ = sendWithRetry(ctx, client, v.Info.Chat, addBackHint(NotRegistered), 1, 2*time.Second)
+			return
+		} else {
+			greetName = nm
+		}
+	}
 
 	// Normalize user input
 	lower := strings.ToLower(raw)
@@ -290,16 +290,16 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 			existingName, existingWilayah, existingDOB, found, err := repository.GetRegistrationByPhone(v.Info.Sender.User)
 			if err != nil {
 				log.Printf("Error querying database: %v", err)
-				reply = "Maaf, terjadi kesalahan sistem. Silakan coba lagi nanti."
+				reply = ErrorQuerying
 			} else if found {
-				reply = fmt.Sprintf("Anda sudah terdaftar sebelumnya dengan data:\nNama: %s\nWilayah: %s\nTahun Lahir: %s\n\nData tidak dapat diubah. \n\nHubungi panitia di nomor 081297898399 jika ada kesalahan data.",
+				reply = fmt.Sprintf(AlreadyRegistered,
 					existingName, existingWilayah, existingDOB)
 			} else {
 				if err := repository.InsertRegistration(strings.ToUpper(name), strings.ToUpper(wilayah), dob, v.Info.Sender.User); err != nil {
 					log.Printf("Error saving to database: %v", err)
-					reply = "Maaf, terjadi kesalahan saat menyimpan data. Silakan coba lagi."
+					reply = ErrorSaving
 				} else {
-					reply = fmt.Sprintf("Terima kasih!\nPendaftaran pemilihan online berhasil dengan data sebagai berikut:\nNama: %s\nWilayah: %s\nTahun Lahir: %s\n\nKetik 'back to main menu' untuk kembali ke menu.",
+					reply = fmt.Sprintf(SuccessRegister,
 						name, wilayah, dob)
 				}
 			}
@@ -315,29 +315,27 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 }
 
 func menuText(name string) string {
-    base := "Selamat datang di Asisten Virtual PPPK GKJP:\n1. Info Pemilihan\n2. Registrasi pemilihan Online\n3. Kirim ulang surat suara Digital\n\nBalas dengan angka: 1, 2 atau 3."
-    if strings.TrimSpace(name) != "" {
-        return fmt.Sprintf("Syaloom %s,\n\n%s", name, base)
-    }
-    return base
+	base := OpeningGreeting
+	if strings.TrimSpace(name) != "" {
+		return fmt.Sprintf("Syaloom %s,\n\n%s", name, base)
+	}
+	return base
 }
 
 func registrationHelp(prefix string) string {
-	return fmt.Sprintf("%sUntuk mendaftar pemilihan online, silahkan kirim pesan dengan format:\nDAFTAR-<nama lengkap jemaat>-<wilayah pelayanan>-<tahun lahir># \n\nTahun Lahir 4 Digit, Contoh: 1985\nWilayah pp1/pp2/serpong/bukit/reni\n\nContoh:\nDAFTAR-James Munthe-pp1-1972#\nDAFTAR-Maria Fatmitasari-pp2-1972#\nDAFTAR-Ery Setiawan-bukit-1972#\nDAFTAR-Florencia Irena-reni-1980#\nDAFTAR-Titus Adi Prasetyo-serpong-1985#", prefix)
+	return fmt.Sprintf(RegistrationHelp, prefix)
 }
 
 func resendVoteHelp(prefix string) string {
-	return fmt.Sprintf("%sUntuk mengirim ulang surat suara digital, silahkan kirim pesan dengan format:\nRESEND-VOTE-<nomor surat suara>-<nomor surat suara>-<nomor surat suara># \n\nContoh:\nRESEND-VOTE-1234567890-1234567890-1234567890#", prefix)
+	return fmt.Sprintf(ResendVoteHelp, prefix)
 }
 
 func infoPemilihanHelp(prefix string) string {
-	return fmt.Sprintf("%sPemilihan pendeta di laksanakan secara Onsite dan Online di Tanggal 28 September 2025\n\nUntuk informasi lebih lanjut, silahkan hubungi nomor 081297898399", prefix)
+	return fmt.Sprintf(InfoPemilihanHelp, prefix)
 }
 
-const backHint = "\n\nketik 0 untuk kembali ke menu utama"
-
 func addBackHint(s string) string {
-	if strings.Contains(strings.ToLower(s), "ketik 0 untuk kembali ke menu utama") {
+	if strings.Contains(strings.ToLower(s), backHint) {
 		return s
 	}
 	return s + backHint
@@ -358,14 +356,14 @@ func parseRegistration(s string) (name, wilayah, dob, message string, ok bool) {
 	switch w {
 	case "pp1", "pp2", "serpong", "bukit", "reni":
 	default:
-		return "", "", "", "Wilayah pelayanan tidak valid. Silahkan isi pp1/pp2/serpong/bukit/reni\n\n", false
+		return "", "", "", ErrorWilayah, false
 	}
 
 	// Validate year is between 1900 and current year + 1
 	currentYear := time.Now().Year()
 	parsedYear, err := strconv.Atoi(year)
 	if err != nil || parsedYear < 1900 || parsedYear > currentYear+1 {
-		return "", "", "", "Tahun lahir tidak valid. Silahkan isi tahun lahir 4 digit\n\n", false
+		return "", "", "", ErrorDOB, false
 	}
 
 	return n, w, year, "", true
