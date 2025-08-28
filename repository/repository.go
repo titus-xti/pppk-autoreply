@@ -47,7 +47,6 @@ func Close() {
 }
 
 // VoteMasterPhoneExists returns the name for the given phone from vote_master.
-// If the returned name is an empty string, the phone is not registered.
 func VoteMasterPhoneExists(phone string) (string, error) {
 	if pool == nil {
 		return "", errors.New("repository not initialized: call repository.Init")
@@ -63,6 +62,24 @@ func VoteMasterPhoneExists(phone string) (string, error) {
 		return "", err
 	}
 	return name, nil
+}
+
+// GetVoteMaster param phone
+func GetVoteMaster(phone string) (name, wilayah, dob string, found bool, err error) {
+	if pool == nil {
+		return "", "", "", false, errors.New("repository not initialized: call repository.Init")
+	}
+	err = pool.QueryRow(context.Background(), "SELECT name, wilayah, extract(year from dob)::text dob FROM vote_master WHERE phone = $1", phone).
+		Scan(&name, &wilayah, &dob)
+	if errors.Is(err, pgx.ErrNoRows) {
+		log.Printf("vote_master check error: %v", err)
+		return "", "", "", false, nil
+	}
+	if err != nil {
+		log.Printf("vote_master check error: %v", err)
+		return "", "", "", false, err
+	}
+	return name, wilayah, dob, true, nil
 }
 
 // GetRegistrationByPhone returns registration data for phone_number if exists

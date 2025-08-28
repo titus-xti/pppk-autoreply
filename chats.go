@@ -29,19 +29,13 @@ Surat suara Digital: https://pemilihan.gkj-pamulang.org/%s
 
 Simpan surat suara digital ini dengan aman.`
 
-	RegistrationHelp = `%sUntuk mendaftar pemilihan online, silahkan kirim pesan dengan format:
+	RegistrationHelp = `Konfirmasi pendaftaran pemilihan online
 
-DAFTAR-<nama lengkap jemaat>-<wilayah pelayanan>-<tahun lahir>#
+Nama : %s
+Wilayah : %s
+Tahun Lahir : %s
 
-Tahun Lahir 4 Digit, Contoh: 1985
-Wilayah pp1/pp2/serpong/bukit/reni
-
-Contoh:
-DAFTAR-James Munthe-pp1-1972#
-DAFTAR-Maria Fatmitasari-pp2-1972#
-DAFTAR-Ery Setiawan-bukit-1972#
-DAFTAR-Florencia Irena-reni-1980#
-DAFTAR-Titus Adi Prasetyo-serpong-1985#`
+Ketik "ya" untuk mendaftar pemilihan online`
 
 	InfoPemilihanHelp = `%sPemilihan pendeta di laksanakan secara Onsite dan Online
 

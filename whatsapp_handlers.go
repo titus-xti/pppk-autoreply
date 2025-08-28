@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -283,7 +281,7 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 			return
 		case "2":
 			setSessionMode(key, ModeRegistration)
-			if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(registrationHelp("")), 1, 2*time.Second); err != nil {
+			if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(registrationHelp(key)), 1, 2*time.Second); err != nil {
 				logf("auto-reply error: %v\n", err)
 			}
 			return
@@ -295,6 +293,7 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 			return
 		default:
 			// Default: show menu if not recognized
+			setSessionMode(key, ModeMenu)
 			if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(menuText(greetName)), 1, 2*time.Second); err != nil {
 				logf("auto-reply error: %v\n", err)
 			}
@@ -302,7 +301,7 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 		}
 
 	case ModeRegistration:
-		name, wilayah, dob, msg, ok := parseRegistration(raw)
+		name, wilayah, dob, _, ok := parseRegistration(v.Info.Sender.User, lower)
 		var reply string
 		if ok {
 			existingName, existingWilayah, existingDOB, found, err := repository.GetRegistrationByPhone(v.Info.Sender.User)
@@ -328,7 +327,8 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 				}
 			}
 		} else {
-			reply = registrationHelp(msg)
+			setSessionMode(key, ModeMenu)
+			reply = menuText(greetName)
 		}
 
 		if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(reply), 1, 2*time.Second); err != nil {
@@ -346,8 +346,15 @@ func menuText(name string) string {
 	return base
 }
 
-func registrationHelp(prefix string) string {
-	return fmt.Sprintf(RegistrationHelp, prefix)
+func registrationHelp(key string) string {
+	name, wilayah, dob, found, err := repository.GetVoteMaster(key)
+	if err != nil {
+		return ErrorQuerying
+	}
+	if !found {
+		return NotRegistered
+	}
+	return fmt.Sprintf(RegistrationHelp, name, wilayah, dob)
 }
 
 func resendVoteHelp(prefix string, v *events.Message) string {
@@ -366,38 +373,29 @@ func infoPemilihanHelp(prefix string) string {
 }
 
 func addBackHint(s string) string {
-    if strings.Contains(strings.ToLower(s), strings.ToLower(backHint)) {
-        return s
-    }
-    return s + backHint
+	if strings.Contains(strings.ToLower(s), strings.ToLower(backHint)) {
+		return s
+	}
+	return s + backHint
 }
 
-// parseRegistration parses text like: DAFTAR-<name>-<wilayah>-<year>#
-func parseRegistration(s string) (name, wilayah, dob, message string, ok bool) {
-	re := regexp.MustCompile(`(?i)^DAFTAR\s*-\s*([^\-\r\n]+?)\s*-\s*([^\-\r\n]+?)\s*-\s*(\d{4})\s*#\s*$`)
-	m := re.FindStringSubmatch(s)
-	if len(m) != 4 {
-		return "", "", "", "Syaloom Bp/Ibu,\n\n", false
-	}
-	n := strings.TrimSpace(m[1])
-	wRaw := strings.TrimSpace(m[2])
-	year := strings.TrimSpace(m[3])
-	w := strings.ToLower(wRaw)
+// parseRegistration by read data from vote_master table
+func parseRegistration(phone, raw string) (name, wilayah, dob, message string, ok bool) {
 
-	switch w {
-	case "pp1", "pp2", "serpong", "bukit", "reni":
-	default:
-		return "", "", "", ErrorWilayah, false
+	if strings.TrimSpace(raw) == "ya" {
+		name, wilayah, dob, found, err := repository.GetVoteMaster(phone)
+		if err != nil {
+			return "", "", "", ErrorQuerying, false
+		}
+		if !found {
+			return "", "", "", NotRegistered, false
+		}
+
+		return name, wilayah, dob, "Syaloom Bp/Ibu,\n\n", true
 	}
 
-	// Validate year is between 1900 and current year + 1
-	currentYear := time.Now().Year()
-	parsedYear, err := strconv.Atoi(year)
-	if err != nil || parsedYear < 1900 || parsedYear > currentYear+1 {
-		return "", "", "", ErrorDOB, false
-	}
+	return "", "", "", "", false
 
-	return n, w, year, "", true
 }
 
 // cleanupAllDevices removes all whatsmeow device rows from the SQL store
