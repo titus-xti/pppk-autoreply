@@ -40,12 +40,12 @@ Ketik "ya" untuk mendaftar pemilihan online`
 
 	InfoPemilihanHelp = `%sPemilihan pendeta di laksanakan secara Onsite/Langsung dan Online
 
-~1. Pemilihan Onsite/Langsung~
+*1. Pemilihan Onsite/Langsung*
 - Dilaksanakan pada Tanggal 28 September 2025 Jam 10:00 WIB (Setelah Ibadah) sampai Selesai
 - Jemaat di harapkan hadir di Gereja, 30 menit sebelum Ibadah dimulai untuk mengisi daftar hadir dan mendapatkan surat suara
 - Jemaat melakukan pencoblosan kartu suara dengan pilihan SETUJU atau TIDAK SETUJU
 
-~2. Pemilihan Online~
+*2. Pemilihan Online*
 - Diutamakan bagi Jemaat yang sedang Study luar kota, Tugas di luar Kota atau berhalangan hadir di Gereja pada saat pemilihan Onsite/Langsung Tanggal 28 September 2025 
 - Jemaat terlebih dahulu melakukan pendaftaran pemilihan online, paling lambat 21 September 2025
 - Satu nomor HP/WA untuk satu Jemaat
@@ -60,7 +60,7 @@ silahkan menghubungi Majelis Wilayah atau Panitia`
 
 https://pemilihan.gkj-pamulang.org/%s
 
-~Simpan surat suara digital ini dengan aman dan pastikan surat suara digital ini tidak dipergunakan orang lain~`
+*Simpan surat suara digital ini dengan aman dan pastikan surat suara digital ini tidak dipergunakan orang lain*`
 
 	NotYetRegistered = `Anda belum terdaftar di dalam pemilihan online,
 Silahkan melakukan pendaftaran terlebih dahulu`
@@ -76,5 +76,5 @@ Hubungi Majelis wilayah atau Panitia jika ada kesalahan data.`
 )
 
 const (
-	backHint = "\n\nKetik 0 untuk kembali ke menu utama\n\n~Semua pesan di jawab oleh System, mohon hanya mengirimkan pesan sesuai instruksi~\n\n~Terimakasih~"
+	backHint = "\n\nKetik 0 untuk kembali ke menu utama\n\n*Semua pesan di jawab oleh System, mohon hanya mengirimkan pesan sesuai instruksi*\n\n*Terimakasih*"
 )

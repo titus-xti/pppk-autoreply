@@ -341,7 +341,7 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 func menuText(name string) string {
 	base := OpeningGreeting
 	if strings.TrimSpace(name) != "" {
-		return fmt.Sprintf("~Syaloom %s,\n\n%s~", name, base)
+		return fmt.Sprintf("*Syaloom %s*,\n\n%s", name, base)
 	}
 	return base
 }
