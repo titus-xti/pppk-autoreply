@@ -38,20 +38,20 @@ Tahun Lahir : %s
 
 Ketik "ya" untuk mendaftar pemilihan online`
 
-	InfoPemilihanHelp = `%sPemilihan pendeta di laksanakan secara Onsite dan Online
+	InfoPemilihanHelp = `%sPemilihan pendeta di laksanakan secara Onsite/Langsung dan Online
 
-1. Pemilihan Onsite/Langsung 
+~1. Pemilihan Onsite/Langsung~
 - Dilaksanakan pada Tanggal 28 September 2025 Jam 10:00 WIB (Setelah Ibadah) sampai Selesai
 - Jemaat di harapkan hadir di Gereja, 30 menit sebelum Ibadah dimulai untuk mengisi daftar hadir dan mendapatkan surat suara
 - Jemaat melakukan pencoblosan kartu suara dengan pilihan SETUJU atau TIDAK SETUJU
 
-2. Pemilihan Online 
+~2. Pemilihan Online~
 - Diutamakan bagi Jemaat yang sedang Study luar kota, Tugas di luar Kota atau berhalangan hadir di Gereja pada saat pemilihan Onsite/Langsung Tanggal 28 September 2025 
 - Jemaat terlebih dahulu melakukan pendaftaran pemilihan online, paling lambat 21 September 2025
 - Satu nomor HP/WA untuk satu Jemaat
 - Pastikan surat suara digital yang diterima disimpan dengan baik, dan tidak di pergunakan orang lain
 - Jemaat bisa mulai memilih pada Tanggal 25 September 2025 Jam 00:00 WIB sampai 27 September 2025 Jam 24:00 WIB
-- Jemaat melakukan memilih pada kartu suara digital dengan pilihan SETUJU atau TIDAK SETUJU
+- Jemaat memilih pada kartu suara digital dengan pilihan SETUJU atau TIDAK SETUJU
 
 Untuk informasi lebih lanjut, 
 silahkan menghubungi Majelis Wilayah atau Panitia`
@@ -60,8 +60,7 @@ silahkan menghubungi Majelis Wilayah atau Panitia`
 
 https://pemilihan.gkj-pamulang.org/%s
 
-Simpan surat suara digital ini dengan aman,
-Pastikan surat suara digital ini tidak dipergunakan orang lain`
+~Simpan surat suara digital ini dengan aman dan pastikan surat suara digital ini tidak dipergunakan orang lain~`
 
 	NotYetRegistered = `Anda belum terdaftar di dalam pemilihan online,
 Silahkan melakukan pendaftaran terlebih dahulu`
@@ -77,5 +76,5 @@ Hubungi Majelis wilayah atau Panitia jika ada kesalahan data.`
 )
 
 const (
-	backHint = "\n\nKetik 0 untuk kembali ke menu utama\n\nSemua pesan di jawab oleh System\nMohon hanya mengirimkan pesan sesuai instruksi\n\nTerimakasih"
+	backHint = "\n\nKetik 0 untuk kembali ke menu utama\n\n~Semua pesan di jawab oleh System, mohon hanya mengirimkan pesan sesuai instruksi~\n\n~Terimakasih~"
 )
