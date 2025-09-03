@@ -50,12 +50,12 @@ Jemaat akan diminta untuk mencoblos surat suara dengan pilihan SETUJU atau TIDAK
 
 Berikut tata cara pemilihan:
 
-1. Pemilihan Langsung/on site
+*1. Pemilihan Langsung/on site*
 - Jemaat diharapkan sudah hadir di Gereja 30 menit sebelum ibadah dimulai untuk mengisi daftar hadir dan mendapatkan surat suara.
 - Setelah ibadah selesai, jemaat akan diminta panitia untuk maju ke bilik suara yang tersedia, melakukan pencoblosan dan memasukan surat suara ke dalam kotak suara yang tersedia.
 - Jemaat dapat melihat langsung proses perhitungan suara atau melalui live streaming.
 
-2. Pemilihan On line
+*2. Pemilihan On line*
 - Diberlakukan bagi Jemaat yang sedang studi atau bertugas di luar kota, atau karena sebab lain sehingga berhalangan hadir pada hari pemilihan.
 - Jemaat terlebih dahulu melakukan pendaftaran pemilihan online, paling lambat 21 September 2025.
 - Satu nomor HP/WA hanya untuk satu Jemaat.
