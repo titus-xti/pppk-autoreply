@@ -38,20 +38,29 @@ Tahun Lahir : %s
 
 Ketik "ya" untuk mendaftar pemilihan online`
 
-	InfoPemilihanHelp = `%sPemilihan pendeta di laksanakan secara Onsite/Langsung dan Online
+	InfoPemilihanHelp = `%sAnda terpilih sebagai jemaat GKJ Pamulang yang memiliki hak pilih/suara dalam pemilihan calon pendeta GKJ Pamulang.
 
-*1. Pemilihan Onsite/Langsung*
-- Dilaksanakan pada Tanggal 28 September 2025 Jam 10:00 WIB (Setelah Ibadah) sampai Selesai
-- Jemaat di harapkan hadir di Gereja, 30 menit sebelum Ibadah dimulai untuk mengisi daftar hadir dan mendapatkan surat suara
-- Jemaat melakukan pencoblosan kartu suara dengan pilihan SETUJU atau TIDAK SETUJU
+Pemilihan dilaksanakan melalui pemungutan suara _(voting)_ yang akan dilaksanakan *pada hari Minggu tanggal 28 September 2025* mulai jam 10:00 WIB (atau setelah Ibadah minggu) sampai dengan selesai bertempat di GKJ Pamulang.
 
-*2. Pemilihan Online*
-- Diutamakan bagi Jemaat yang sedang Study luar kota, Tugas di luar Kota atau berhalangan hadir di Gereja pada saat pemilihan Onsite/Langsung Tanggal 28 September 2025 
-- Jemaat terlebih dahulu melakukan pendaftaran pemilihan online, paling lambat 21 September 2025
-- Satu nomor HP/WA untuk satu Jemaat
-- Pastikan surat suara digital yang diterima disimpan dengan baik, dan tidak di pergunakan orang lain
-- Jemaat bisa mulai memilih pada Tanggal 25 September 2025 Jam 00:00 WIB sampai 27 September 2025 Jam 24:00 WIB
-- Jemaat memilih pada kartu suara digital dengan pilihan SETUJU atau TIDAK SETUJU
+Jemaat GKJ Pamulang yang berhak mengikuti pemilihan adalah jemaat dewasa, yakni jemaat yang telah mengaku percaya/sidi; atau yang sudah baptis dewasa.
+
+*Selain itu, jemaat simpatisan termasuk jemaat titipan juga berhak mengikuti pemilihan dengan syarat jemaat dimaksud telah mengaku percaya/sidi atau yang sudah baptis dewasa pada gereja lain; dan khusus untuk jemaat simpatisan dilengkapi dengan pernyataan keikutsertaaan untuk memilih dan pernyataan sudah sidi/baptis dewasa.*
+
+Jemaat akan diminta untuk mencoblos surat suara dengan pilihan SETUJU atau TIDAK SETUJU Sdr. Pnt. Faisha Sudarlin, M.Th menjadi pendeta di GKJ Pamulang (catatan: penetapan seseorang menjadi pendeta terlebih dahulu diharuskan menjalani beberapa tahapan yang secara umum meliputi uji kelayakan calon pendeta sampai dengan penahbisan pendeta).
+
+Berikut tata cara pemilihan:
+
+1. Pemilihan Langsung/on site
+a. Jemaat diharapkan sudah hadir di Gereja 30 menit sebelum ibadah dimulai untuk mengisi daftar hadir dan mendapatkan surat suara.
+b. Setelah ibadah selesai, jemaat akan diminta panitia untuk maju ke bilik suara yang tersedia, melakukan pencoblosan dan memasukan surat suara ke dalam kotak suara yang tersedia.
+c. Jemaat dapat melihat langsung proses perhitungan suara atau melalui live streaming.
+
+2. Pemilihan On line
+a. Diberlakukan bagi Jemaat yang sedang studi atau bertugas di luar kota, atau karena sebab lain sehingga berhalangan hadir pada hari pemilihan.
+b. Jemaat terlebih dahulu melakukan pendaftaran pemilihan online, paling lambat 21 September 2025.
+c. Satu nomor HP/WA hanya untuk satu Jemaat.
+d. Surat suara digital yang diterima agar disimpan dengan baik, dan tidak boleh di pergunakan orang lain.
+e. Jemaat bisa mulai memilih pada tanggal 25 September 2025 Jam 00:00 WIB sampai 27 September 2025 Jam 24:00 WIB.
 
 Untuk informasi lebih lanjut, 
 silahkan menghubungi Majelis Wilayah atau Panitia`
