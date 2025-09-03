@@ -51,16 +51,16 @@ Jemaat akan diminta untuk mencoblos surat suara dengan pilihan SETUJU atau TIDAK
 Berikut tata cara pemilihan:
 
 1. Pemilihan Langsung/on site
-a. Jemaat diharapkan sudah hadir di Gereja 30 menit sebelum ibadah dimulai untuk mengisi daftar hadir dan mendapatkan surat suara.
-b. Setelah ibadah selesai, jemaat akan diminta panitia untuk maju ke bilik suara yang tersedia, melakukan pencoblosan dan memasukan surat suara ke dalam kotak suara yang tersedia.
-c. Jemaat dapat melihat langsung proses perhitungan suara atau melalui live streaming.
+- Jemaat diharapkan sudah hadir di Gereja 30 menit sebelum ibadah dimulai untuk mengisi daftar hadir dan mendapatkan surat suara.
+- Setelah ibadah selesai, jemaat akan diminta panitia untuk maju ke bilik suara yang tersedia, melakukan pencoblosan dan memasukan surat suara ke dalam kotak suara yang tersedia.
+- Jemaat dapat melihat langsung proses perhitungan suara atau melalui live streaming.
 
 2. Pemilihan On line
-a. Diberlakukan bagi Jemaat yang sedang studi atau bertugas di luar kota, atau karena sebab lain sehingga berhalangan hadir pada hari pemilihan.
-b. Jemaat terlebih dahulu melakukan pendaftaran pemilihan online, paling lambat 21 September 2025.
-c. Satu nomor HP/WA hanya untuk satu Jemaat.
-d. Surat suara digital yang diterima agar disimpan dengan baik, dan tidak boleh di pergunakan orang lain.
-e. Jemaat bisa mulai memilih pada tanggal 25 September 2025 Jam 00:00 WIB sampai 27 September 2025 Jam 24:00 WIB.
+- Diberlakukan bagi Jemaat yang sedang studi atau bertugas di luar kota, atau karena sebab lain sehingga berhalangan hadir pada hari pemilihan.
+- Jemaat terlebih dahulu melakukan pendaftaran pemilihan online, paling lambat 21 September 2025.
+- Satu nomor HP/WA hanya untuk satu Jemaat.
+- Surat suara digital yang diterima agar disimpan dengan baik, dan tidak boleh di pergunakan orang lain.
+- Jemaat bisa mulai memilih pada tanggal 25 September 2025 Jam 00:00 WIB sampai 27 September 2025 Jam 24:00 WIB.
 
 Untuk informasi lebih lanjut, 
 silahkan menghubungi Majelis Wilayah atau Panitia`
