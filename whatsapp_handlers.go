@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -170,6 +171,8 @@ func startPairingFlow(ctx context.Context, client *whatsmeow.Client) {
 
 // sendWithRetry sends a plain text message with simple retries and fixed backoff
 func sendWithRetry(ctx context.Context, client *whatsmeow.Client, to types.JID, text string, attempts int, backoff time.Duration) error {
+	// Tambah delay acak 1-5 detik
+	time.Sleep(time.Duration(1+rand.Intn(4)) * time.Second)
 	for i := 0; i < attempts; i++ {
 		if _, err := client.SendMessage(ctx, to, &waProto.Message{Conversation: protoStr(text)}); err != nil {
 			if i == attempts-1 {
