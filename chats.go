@@ -103,6 +103,7 @@ Atas dasar keputusan tersebut, GKJ Pamulang telah menjalankan kegiatan pemanggil
 a. Proses pemanggilan calon pendeta (bulan April 2025)
 b. Proses asesmen calon pendeta (bulan Mei 2025) dan
 c. Masa orientasi / pengenalan calon pendeta (bulan Mei s.d Agustus 2025).
+
 Adapun kegiatan yang akan dijalankan di bulan September 2025 adalah pemilihan calon pendeta melalui voting, dalam hal ini jemaat akan dimintakan suaranya dalam memutuskan *Setuju* atau *Tidak Setuju* bila mas Fa menjadi Pendeta di GKJ Pamulang.
 `
 )

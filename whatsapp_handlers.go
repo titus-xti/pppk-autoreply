@@ -255,7 +255,7 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 
 	// If we're in Info or ResendVote modes, user should only type 0/menu to go back.
 	// For any other input, resend the back hint and ignore content.
-	if (sess.Mode == ModeInfo || sess.Mode == ModeResendVote) && !(lower == "0" || lower == "menu" || strings.Contains(lower, "back to main menu")) {
+	if (sess.Mode == ModeInfo || sess.Mode == ModeResendVote || sess.Mode == ModeProfil) && !(lower == "0" || lower == "menu" || strings.Contains(lower, "back to main menu")) {
 		if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(""), 1, 2*time.Second); err != nil {
 			logf("auto-reply error: %v\n", err)
 		}
