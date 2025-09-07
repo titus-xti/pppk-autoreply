@@ -84,7 +84,7 @@ Tahun Lahir: %s
 Data tidak dapat diubah. 
 Hubungi Majelis wilayah atau Panitia jika ada kesalahan data.`
 
-	ProfilCalonPendeta = `*PROFIL CALON PENDETA GKJ PAMULANG*
+	ProfilCalonPendeta = `%s*PROFIL CALON PENDETA GKJ PAMULANG*
  
 1. Nama lengkap : Faisha Sudarlin
 2. Usia : 30 tahun
