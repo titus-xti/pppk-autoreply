@@ -294,6 +294,12 @@ func autoReplyForIncoming(ctx context.Context, client *whatsmeow.Client, v *even
 				logf("auto-reply error: %v\n", err)
 			}
 			return
+		case "4":
+			setSessionMode(key, ModeProfil)
+			if err := sendWithRetry(ctx, client, v.Info.Chat, addBackHint(profileHelp("")), 1, 2*time.Second); err != nil {
+				logf("auto-reply error: %v\n", err)
+			}
+			return
 		default:
 			// Default: show menu if not recognized
 			setSessionMode(key, ModeMenu)
@@ -373,6 +379,10 @@ func resendVoteHelp(prefix string, v *events.Message) string {
 
 func infoPemilihanHelp(prefix string) string {
 	return fmt.Sprintf(InfoPemilihanHelp, prefix)
+}
+
+func profileHelp(prefix string) string {
+	return fmt.Sprintf(ProfilCalonPendeta, prefix)
 }
 
 func addBackHint(s string) string {

@@ -6,8 +6,9 @@ var (
 1. Informasi Pemilihan
 2. Registrasi Pemilihan Online
 3. Kirim ulang surat suara Digital
+4. Profil Calon Pendeta
 
-Balas dengan angka: 1, 2 atau 3.`
+Balas dengan angka: 1, 2, 3 atau 4.`
 
 	ErrorSaving = `Maaf, terjadi kesalahan saat menyimpan data. Silakan coba lagi.`
 
@@ -82,6 +83,28 @@ Tahun Lahir: %s
 
 Data tidak dapat diubah. 
 Hubungi Majelis wilayah atau Panitia jika ada kesalahan data.`
+
+	ProfilCalonPendeta = `*PROFIL CALON PENDETA GKJ PAMULANG*
+ 
+1. Nama lengkap : Faisha Sudarlin
+2. Usia : 30 tahun
+3. Pendidikan terakhir: S2 / Magister Teologi
+4. Domisili: Pamulang, Tangerang Selatan
+5. Pekerjaan saat ini: Tenaga Pelayan Gerejawi di GKJ Pamulang dan Anggota Tim Inti Nyanyian Gereja di Yayasan Musik Gereja Indonesia
+
+Sdr. Faisha Sudarlin yang akrab dengan panggilan mas Fa memulai tugas sebagai tenaga pelayan gerejawi di GKJ Pamulang sejak tanggal 10 Juni 2018, setelah itu diangkat sebagai karyawan tetap di GKJ Pamulang per 1 September 2020. Saat ini yang bersangkutan juga menjadi majelis gereja dengan jabatan Penatua membawahi bidang Kesaksian dan Pelayanan.
+
+Di awal pelayanannya, mas Fa menjalankan tugas-tugas gerejawi antara lain: melatih musik bagi pemandu/pengiring lagu pujian; melatih paduan suara untuk beberapa kategorial seperti: Adiyuswa, KPR, dan jemaat dewasa/wilayah; termasuk bertugas sebagai pemandu/pengiring lagu pujian. Dalam perkembangannya, Mas Fa juga menjalankan tugas gerejawi lainnya, yakni sebagai pembawa firman baik dalam ibadah minggu atapun ibadah lainnya.
+
+Dengan memperhatikan hasil jajak pendapat dengan jemaat terhadap pencalonan mas Fa sebagai pendeta GKJ Pamulang, maka berdasarkan Keputusan No.: *KEP-05/MG/GKJP/III/2025, tanggal 25 Maret 2025*, Majelis telah memutuskan Sdr. Pnt. Faisha Sudarlin, MTh. Sebagai calon tunggal untuk calon Pendeta kedua GKJ Pamulang.
+
+Atas dasar keputusan tersebut, GKJ Pamulang telah menjalankan kegiatan pemanggilan pendeta, meliputi:
+
+a. Proses pemanggilan calon pendeta (bulan April 2025)
+b. Proses asesmen calon pendeta (bulan Mei 2025) dan
+c. Masa orientasi / pengenalan calon pendeta (bulan Mei s.d Agustus 2025).
+Adapun kegiatan yang akan dijalankan di bulan September 2025 adalah pemilihan calon pendeta melalui voting, dalam hal ini jemaat akan dimintakan suaranya dalam memutuskan *Setuju* atau *Tidak Setuju* bila mas Fa menjadi Pendeta di GKJ Pamulang.
+`
 )
 
 const (

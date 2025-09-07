@@ -18,6 +18,7 @@ const (
 	ModeInfo         ChatMode = "info"
 	ModeResendVote   ChatMode = "resend_vote"
 	ModeRegistration ChatMode = "registration"
+	ModeProfil       ChatMode = "profil"
 )
 
 // Session keeps simple per-user state in memory
