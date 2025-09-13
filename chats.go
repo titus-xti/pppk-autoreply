@@ -1,7 +1,7 @@
 package main
 
 var (
-	OpeningGreeting = `Selamat datang di Chatbot Panitia Pemanggilan Pendeta Kedua GKJ Pamulang:
+	OpeningGreeting = `Selamat datang di Whatsapp Panitia Pemanggilan Pendeta Kedua GKJ Pamulang:
 
 1. Informasi Pemilihan
 2. Registrasi Pemilihan Online
@@ -109,5 +109,5 @@ Adapun kegiatan yang akan dijalankan di bulan September 2025 adalah pemilihan ca
 )
 
 const (
-	backHint = "\n\nKetik 0 untuk kembali ke menu utama\n\n*Semua pesan di jawab oleh System, mohon hanya mengirimkan pesan sesuai instruksi*\n\n*Terimakasih*"
+	backHint = "\n\nKetik 0 untuk kembali ke menu utama\n\n_Mohon hanya mengirimkan pesan sesuai instruksi_\n\n*Terimakasih*"
 )
